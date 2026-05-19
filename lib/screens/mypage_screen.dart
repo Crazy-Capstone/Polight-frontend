@@ -137,7 +137,7 @@ class MypageScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Color(0xFFE1EDF8), width: 1),
+        border: Border.all(color: const Color(0xFFE1EDF8), width: 1),
       ),
       child: Column(
         children: [
@@ -145,7 +145,7 @@ class MypageScreen extends StatelessWidget {
           const SizedBox(height: 7),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 10,
               fontWeight: FontWeight.w400,
@@ -222,7 +222,7 @@ class MypageScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E9FF)),
+        border: Border.all(color: const Color(0xFFCEDDFE)),
       ),
       child: Row(
         children: [
@@ -233,7 +233,7 @@ class MypageScreen extends StatelessWidget {
               color: const Color(0xFFEBF1FF),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Center(child: Text('🇯🇵', style: TextStyle(fontSize: 20))),
+            child: const Center(child: Text('✈️', style: TextStyle(fontSize: 20))),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -243,15 +243,15 @@ class MypageScreen extends StatelessWidget {
                 Text(
                   '일본 여행자 보험 (한화생명)',
                   style: TextStyle(
-                    color: Color(0xFF111827),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF001635),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 SizedBox(height: 3),
                 Text(
                   '2025.04.08 – 04.18 · D-7',
-                  style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11, fontWeight: FontWeight.w400),
                 ),
               ],
             ),
@@ -259,7 +259,7 @@ class MypageScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F5E9),
+              color: const Color(0xFFE2E9FF),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -309,7 +309,7 @@ class MypageScreen extends StatelessWidget {
               color: const Color(0xFFF0F4FF),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.folder_outlined, color: Color(0xFF8BA3CC), size: 22),
+            child: const Center(child: Text('📂', style: TextStyle(fontSize: 22))),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -319,15 +319,15 @@ class MypageScreen extends StatelessWidget {
                 Text(
                   '이전 보험 내역 보기',
                   style: TextStyle(
-                    color: Color(0xFF111827),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF001635),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
                 SizedBox(height: 3),
                 Text(
                   '만료된 보험 기록 전체 조회',
-                  style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11, fontWeight: FontWeight.w400,),
                 ),
               ],
             ),
@@ -349,29 +349,24 @@ class MypageScreen extends StatelessWidget {
       child: Column(
         children: [
           _buildAccountRow(
-            icon: Icons.person_outline_rounded,
-            iconColor: const Color(0xFF4A6080),
+            emoji: '👤',
             title: '프로필 편집',
             subtitle: '이름, 연락처, 여권 정보',
             badge: null,
-            isFirst: true,
           ),
           const Divider(height: 1, color: Color(0xFFF0F4FF), indent: 16, endIndent: 16),
           _buildAccountRow(
-            icon: Icons.description_outlined,
-            iconColor: const Color(0xFF4A6080),
+            emoji: '📄',
             title: '증권 관리',
             subtitle: 'PDF 업로드 & 보장 분석',
             badge: 'NEW',
           ),
           const Divider(height: 1, color: Color(0xFFF0F4FF), indent: 16, endIndent: 16),
           _buildAccountRow(
-            icon: Icons.notifications_outlined,
-            iconColor: const Color(0xFF4A6080),
+            emoji: '🔔',
             title: '알림 설정',
             subtitle: '보험 만료, 갱신 알림',
             badge: null,
-            isLast: true,
           ),
         ],
       ),
@@ -379,13 +374,10 @@ class MypageScreen extends StatelessWidget {
   }
 
   Widget _buildAccountRow({
-    required IconData icon,
-    required Color iconColor,
+    required String emoji,
     required String title,
     required String subtitle,
     required String? badge,
-    bool isFirst = false,
-    bool isLast = false,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -398,7 +390,7 @@ class MypageScreen extends StatelessWidget {
               color: const Color(0xFFF0F4FF),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: iconColor, size: 20),
+            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 20))),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -407,16 +399,16 @@ class MypageScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Color(0xFF111827),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    color: Color(0xFF001635),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11, fontWeight: FontWeight.w400,),
                 ),
               ],
             ),
@@ -463,9 +455,9 @@ class MypageScreen extends StatelessWidget {
         child: const Text(
           '로그아웃',
           style: TextStyle(
-            color: Color(0xFF111827),
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
+            color: Color(0xFF4A6080),
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ),
@@ -480,8 +472,9 @@ class MypageScreen extends StatelessWidget {
         child: const Text(
           '회원 탈퇴',
           style: TextStyle(
-            color: Color(0xFFEF4444),
-            fontSize: 13,
+            color: Color(0xFFDC9995),
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ),
