@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'coverage_detail_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,6 +30,9 @@ class CoverageItem {
   final String subtitle;
   final String limitLabel;
   final bool isCovered;
+  final String insurer;
+  final List<SummaryItem> summaryItems;
+  final List<DetailItem> detailItems;
 
   const CoverageItem({
     required this.emoji,
@@ -36,6 +40,9 @@ class CoverageItem {
     required this.subtitle,
     required this.limitLabel,
     this.isCovered = true,
+    this.insurer = '삼성화재 여행자보험',
+    this.summaryItems = const [],
+    this.detailItems = const [],
   });
 }
 
@@ -49,36 +56,107 @@ class CoverageScreen extends StatelessWidget {
       title: '의료비',
       subtitle: '입원·통원·응급 치료',
       limitLabel: '최대 1억원',
+      insurer: '삼성화재 여행자보험',
+      summaryItems: [
+        SummaryItem(label: '입원', value: '최대 1억원'),
+        SummaryItem(label: '통원', value: '회당 30만원'),
+        SummaryItem(label: '응급', value: '무제한'),
+      ],
+      detailItems: [
+        DetailItem(title: '외래 진료비', subtitle: '의사 진료, 검사, 처방 포함', isCovered: true),
+        DetailItem(title: '입원 치료비', subtitle: '병실료, 수술비, 간호비 포함', isCovered: true),
+        DetailItem(title: '응급 처치', subtitle: '응급실 내원 시 즉시 적용', isCovered: true),
+        DetailItem(title: '처방약 비용', subtitle: '처방전 발급 약품 한정', isCovered: true),
+        DetailItem(title: '앰뷸런스 이용', subtitle: '현지 응급 이송 비용', isCovered: true),
+        DetailItem(title: '미용·성형 수술', subtitle: '보장 제외', isCovered: false),
+        DetailItem(title: '기존 질환 치료', subtitle: '여행 전 진단된 질환 제외', isCovered: false),
+      ],
     ),
     CoverageItem(
       emoji: '✈️',
       title: '항공 지연',
       subtitle: '3시간 이상 지연',
       limitLabel: '최대 30만원',
+      insurer: '삼성화재 여행자보험',
+      summaryItems: [
+        SummaryItem(label: '지연', value: '최대 30만원'),
+        SummaryItem(label: '결항', value: '최대 50만원'),
+        SummaryItem(label: '대기', value: '3시간 이상'),
+      ],
+      detailItems: [
+        DetailItem(title: '항공편 지연', subtitle: '3시간 이상 지연 시 적용', isCovered: true),
+        DetailItem(title: '항공편 결항', subtitle: '비자발적 결항에 한함', isCovered: true),
+        DetailItem(title: '자발적 취소', subtitle: '본인 사정에 의한 취소 제외', isCovered: false),
+      ],
     ),
     CoverageItem(
       emoji: '🧳',
       title: '수하물',
       subtitle: '항공사 귀책 한정',
       limitLabel: '최대 50만원',
+      insurer: '삼성화재 여행자보험',
+      summaryItems: [
+        SummaryItem(label: '분실', value: '최대 50만원'),
+        SummaryItem(label: '파손', value: '최대 30만원'),
+        SummaryItem(label: '지연', value: '최대 10만원'),
+      ],
+      detailItems: [
+        DetailItem(title: '수하물 분실', subtitle: '항공사 귀책 분실에 한함', isCovered: true),
+        DetailItem(title: '수하물 파손', subtitle: '항공사 과실에 의한 파손', isCovered: true),
+        DetailItem(title: '귀중품 분실', subtitle: '현금·유가증권 제외', isCovered: false),
+      ],
     ),
     CoverageItem(
       emoji: '🚑',
       title: '긴급 이송',
       subtitle: '의료진 동반 후송',
       limitLabel: '한도 없음',
+      insurer: '삼성화재 여행자보험',
+      summaryItems: [
+        SummaryItem(label: '이송비', value: '한도 없음'),
+        SummaryItem(label: '동반', value: '의료진'),
+        SummaryItem(label: '대상', value: '전 질환'),
+      ],
+      detailItems: [
+        DetailItem(title: '항공 이송', subtitle: '의료진 동반 본국 후송', isCovered: true),
+        DetailItem(title: '구급차 이용', subtitle: '현지 응급 이송 비용', isCovered: true),
+        DetailItem(title: '비응급 이송', subtitle: '의료상 필요 없는 이송 제외', isCovered: false),
+      ],
     ),
     CoverageItem(
       emoji: '🦷',
       title: '치과 응급',
       subtitle: '급성 치통·외상',
       limitLabel: '최대 50만원',
+      insurer: '삼성화재 여행자보험',
+      summaryItems: [
+        SummaryItem(label: '응급', value: '최대 50만원'),
+        SummaryItem(label: '외상', value: '포함'),
+        SummaryItem(label: '치통', value: '급성 한정'),
+      ],
+      detailItems: [
+        DetailItem(title: '급성 치통', subtitle: '여행 중 발생한 급성 치통', isCovered: true),
+        DetailItem(title: '치아 외상', subtitle: '사고에 의한 치아 파손', isCovered: true),
+        DetailItem(title: '교정·미용', subtitle: '교정 및 미용 목적 치료 제외', isCovered: false),
+      ],
     ),
     CoverageItem(
       emoji: '⚖️',
       title: '배상 책임',
       subtitle: '제3자 피해 보상',
       limitLabel: '최대 1억원',
+      insurer: '삼성화재 여행자보험',
+      summaryItems: [
+        SummaryItem(label: '대인', value: '최대 1억원'),
+        SummaryItem(label: '대물', value: '최대 500만원'),
+        SummaryItem(label: '공제', value: '1만원'),
+      ],
+      detailItems: [
+        DetailItem(title: '대인 배상', subtitle: '제3자 신체 피해 보상', isCovered: true),
+        DetailItem(title: '대물 배상', subtitle: '제3자 재물 피해 보상', isCovered: true),
+        DetailItem(title: '고의 사고', subtitle: '고의로 인한 사고 제외', isCovered: false),
+        DetailItem(title: '가족 간 사고', subtitle: '피보험자 가족 간 사고 제외', isCovered: false),
+      ],
     ),
   ];
 
@@ -364,7 +442,21 @@ class _CoverageCard extends StatelessWidget {
                         ],
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CoverageDetailScreen(
+                                emoji: item.emoji,
+                                coverageTitle: item.title,
+                                insurer: item.insurer,
+                                maxLimit: item.limitLabel,
+                                summaryItems: item.summaryItems,
+                                detailItems: item.detailItems,
+                              ),
+                            ),
+                          );
+                        },
                         child: const Text(
                           '상세보기 ›',
                           style: TextStyle(
