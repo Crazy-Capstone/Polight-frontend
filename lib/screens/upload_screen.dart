@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
+import 'concern_selection_screen.dart';
 
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
@@ -147,7 +148,9 @@ class _UploadScreenState extends State<UploadScreen> {
       children: [
         _StepCircle(number: 1, label: 'PDF 업로드', isActive: true),
         _StepLine(),
-        _StepCircle(number: 2, label: '분석 중', isActive: false),
+        _StepCircle(number: 2, label: '걱정 선택', isActive: false),
+        _StepLine(),
+        _StepCircle(number: 3, label: '보장 확인', isActive: false),
       ],
     );
   }
@@ -482,7 +485,13 @@ class _UploadScreenState extends State<UploadScreen> {
         width: double.infinity,
         height: 52,
         child: ElevatedButton(
-          onPressed: _selectedFile != null ? () {} : null,
+          onPressed: _selectedFile != null
+              ? () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ConcernSelectionScreen(),
+                    ),
+                  )
+              : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF0066C3),
             foregroundColor: Colors.white,
