@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'upload_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback? onChatTap;
+  const HomeScreen({super.key, this.onChatTap});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -312,6 +314,9 @@ class _HomeScreenState extends State<HomeScreen> {
               subtitle: '바로가기',
               subtitleColor: const Color(0xFF0888F6),
               borderColor: const Color(0xFFE2E9FF),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const UploadScreen()),
+              ),
             )),
           ],
         ),
@@ -326,8 +331,11 @@ class _HomeScreenState extends State<HomeScreen> {
     required String subtitle,
     required Color subtitleColor,
     Color borderColor = const Color(0xFFE5E7EB),
+    VoidCallback? onTap,
   }) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -366,6 +374,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -442,18 +451,21 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-            decoration: BoxDecoration(
-              color: Color(0xFFCEDDFE),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text(
-              '채팅하기',
-              style: TextStyle(
-                color: Color(0xFF001635),
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
+          GestureDetector(
+            onTap: widget.onChatTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFCEDDFE),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                '채팅하기',
+                style: TextStyle(
+                  color: Color(0xFF001635),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),

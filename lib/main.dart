@@ -36,11 +36,11 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
-  static const List<Widget> _screens = [
-    HomeScreen(),
-    CoverageScreen(),
-    ChatbotScreen(),
-    MypageScreen(),
+  List<Widget> get _screens => [
+    HomeScreen(onChatTap: () => setState(() => _currentIndex = 2)),
+    const CoverageScreen(),
+    const ChatbotScreen(),
+    const MypageScreen(),
   ];
 
   static const Color _activeColor = Color(0xFF0066C3);
