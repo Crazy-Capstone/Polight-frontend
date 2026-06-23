@@ -488,7 +488,9 @@ class _UploadScreenState extends State<UploadScreen> {
           onPressed: _selectedFile != null
               ? () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const ConcernSelectionScreen(),
+                      builder: (_) => ConcernSelectionScreen(
+                        fileName: _selectedFile!.name,
+                      ),
                     ),
                   )
               : null,

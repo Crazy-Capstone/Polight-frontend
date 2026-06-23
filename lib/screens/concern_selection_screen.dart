@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'analysis_screen.dart';
 
 class ConcernSelectionScreen extends StatefulWidget {
-  const ConcernSelectionScreen({super.key});
+  final String fileName;
+
+  const ConcernSelectionScreen({
+    super.key,
+    this.fileName = '여행자보험_증권_2025.pdf',
+  });
 
   @override
   State<ConcernSelectionScreen> createState() => _ConcernSelectionScreenState();
@@ -336,7 +342,15 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: _selectedConcerns.isNotEmpty ? () {} : null,
+                onPressed: _selectedConcerns.isNotEmpty
+                    ? () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => AnalysisScreen(
+                              fileName: widget.fileName,
+                            ),
+                          ),
+                        )
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0066C3),
                   foregroundColor: Colors.white,
