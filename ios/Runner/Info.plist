@@ -45,6 +45,10 @@
 	<string>현재 위치를 기반으로 여행 정보를 표시합니다.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>현재 위치를 기반으로 여행 정보를 표시합니다.</string>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
