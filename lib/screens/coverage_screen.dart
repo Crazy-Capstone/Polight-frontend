@@ -177,7 +177,7 @@ class CoverageScreen extends StatelessWidget {
                     const Text(
                       '보장 내역',
                       style: TextStyle(
-                        fontSize: 20,
+                        fontSize: 20.8,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF001635),
                       ),
@@ -248,12 +248,12 @@ class _TripBadge extends StatelessWidget {
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('🇯🇵', style: TextStyle(fontSize: 16)),
+          Text('🇯🇵', style: TextStyle(fontSize: 16.64)),
           SizedBox(width: 2),
           Text(
             '일본 여행',
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 11.44,
               fontWeight: FontWeight.w700,
               color: Color(0xFF004D9D),
             ),
@@ -289,7 +289,7 @@ class _TripDateBanner extends StatelessWidget {
           const Text(
             '2025. 04. 08 — 04. 18',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 12.48,
               fontWeight: FontWeight.w400,
               color: Color(0xFF001635),
             ),
@@ -298,7 +298,7 @@ class _TripDateBanner extends StatelessWidget {
             const Text(
             'D-7 남음',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 12.48,
               fontWeight: FontWeight.w700,
               color: Color(0xFF0066C3),
             ),
@@ -359,7 +359,7 @@ class _CoverageCard extends StatelessWidget {
                         child: Center(
                           child: Text(
                             item.emoji,
-                            style: const TextStyle(fontSize: 20),
+                            style: const TextStyle(fontSize: 20.8),
                           ),
                         ),
                       ),
@@ -377,7 +377,7 @@ class _CoverageCard extends StatelessWidget {
                         child: Text(
                           item.limitLabel,
                           style: const TextStyle(
-                            fontSize: 9,
+                            fontSize: 9.36,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF004D9D),
                           ),
@@ -390,7 +390,7 @@ class _CoverageCard extends StatelessWidget {
                   Text(
                     item.title,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 13.52,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF001635),
                     ),
@@ -400,7 +400,7 @@ class _CoverageCard extends StatelessWidget {
                   Text(
                     item.subtitle,
                     style: const TextStyle(
-                      fontSize: 11,
+                      fontSize: 11.44,
                       color: Color(0xFF4A6080),
                       fontWeight: FontWeight.w400,
                     ),
@@ -432,7 +432,7 @@ class _CoverageCard extends StatelessWidget {
                           Text(
                             item.isCovered ? '보장 중' : '미보장',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 10.4,
                               fontWeight: FontWeight.w400,
                               color: item.isCovered
                                   ? const Color(0xFF2E7D32)
@@ -460,7 +460,7 @@ class _CoverageCard extends StatelessWidget {
                         child: const Text(
                           '상세보기 ›',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 10.4,
                             fontWeight: FontWeight.w400,
                             color: Color(0xFF0888F6),
                           ),

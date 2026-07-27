@@ -136,7 +136,7 @@ class _BlueHeader extends StatelessWidget {
                   const Text(
                     '보장 상세',
                     style: TextStyle(
-                      fontSize: 17,
+                      fontSize: 17.68,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
@@ -144,7 +144,7 @@ class _BlueHeader extends StatelessWidget {
                   Text(
                     coverageTitle,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 12.48,
                       fontWeight: FontWeight.w400,
                       color: Color(0xFF9EBEFE),
                     ),
@@ -167,7 +167,7 @@ class _BlueHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Center(
-                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                  child: Text(emoji, style: const TextStyle(fontSize: 24.96)),
                 ),
               ),
               const SizedBox(width: 14),
@@ -177,7 +177,7 @@ class _BlueHeader extends StatelessWidget {
                   Text(
                     coverageTitle,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 18.72,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
@@ -186,7 +186,7 @@ class _BlueHeader extends StatelessWidget {
                   Text(
                     insurer,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 12.48,
                       color: Color(0xFF9EBEFE),
                       fontWeight: FontWeight.w400,
                     ),
@@ -223,7 +223,7 @@ class _BlueHeader extends StatelessWidget {
                 Text(
                   '보장 한도',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.48,
                     color: Color(0xFF69A3FD),
                     fontWeight: FontWeight.w400,
                   ),
@@ -232,7 +232,7 @@ class _BlueHeader extends StatelessWidget {
                 Text(
                   maxLimit,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 14.56,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),
@@ -280,7 +280,7 @@ class _SummarySection extends StatelessWidget {
                   Text(
                     item.label,
                     style: const TextStyle(
-                      fontSize: 10,
+                      fontSize: 10.4,
                       color: Color(0xFF4A6080),
                       fontWeight: FontWeight.w400,
                     ),
@@ -289,7 +289,7 @@ class _SummarySection extends StatelessWidget {
                   Text(
                     item.value,
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 12.48,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF001635),
                     ),
@@ -328,7 +328,7 @@ class _DetailSection extends StatelessWidget {
           const Text(
             '보장 항목',
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 15.6,
               fontWeight: FontWeight.w700,
               color: Color(0xFF001635),
             ),
@@ -376,7 +376,7 @@ class _DetailItemRow extends StatelessWidget {
             child: Center(
               child: Text(
                 item.isCovered ? '✔️' : '❌',
-                style: const TextStyle(fontSize: 16),
+                style: const TextStyle(fontSize: 16.64),
               ),
             ),
           ),
@@ -388,7 +388,7 @@ class _DetailItemRow extends StatelessWidget {
                 Text(
                   item.title,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 13.52,
                     fontWeight: FontWeight.w700,
                     color: item.isCovered
                         ? const Color(0xFF001635)
@@ -399,7 +399,7 @@ class _DetailItemRow extends StatelessWidget {
                 Text(
                   item.subtitle,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.44,
                     fontWeight: FontWeight.w400,
                     color: item.isCovered
                         ? const Color(0xFF4A6080)

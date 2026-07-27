@@ -72,7 +72,7 @@ class MypageScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Center(
-                  child: Text('🐰', style: TextStyle(fontSize: 32)),
+                  child: Text('🐰', style: TextStyle(fontSize: 33.28)),
                 ),
               ),
               const SizedBox(width: 14),
@@ -80,7 +80,7 @@ class MypageScreen extends StatelessWidget {
                 '류지 님',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 18.72,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -92,7 +92,7 @@ class MypageScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  content: const Text('🇯🇵', style: TextStyle(fontSize: 20)),
+                  content: const Text('🇯🇵', style: TextStyle(fontSize: 20.8)),
                   label: '일본 · D-7',
                 ),
               ),
@@ -103,7 +103,7 @@ class MypageScreen extends StatelessWidget {
                     '10',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 20.8,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -117,7 +117,7 @@ class MypageScreen extends StatelessWidget {
                     '33',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 20.8,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -147,7 +147,7 @@ class MypageScreen extends StatelessWidget {
             label,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 10,
+              fontSize: 10.4,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -174,7 +174,7 @@ class MypageScreen extends StatelessWidget {
               color: const Color(0xFFC0392B).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Center(child: Text('📞', style: TextStyle(fontSize: 22))),
+            child: const Center(child: Text('📞', style: TextStyle(fontSize: 22.88))),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -185,14 +185,14 @@ class MypageScreen extends StatelessWidget {
                   '긴급 전화',
                   style: TextStyle(
                     color: Color(0xFFC0392B),
-                    fontSize: 16,
+                    fontSize: 16.64,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 SizedBox(height: 2),
                 Text(
                   '대사관 · 보험사 번호 바로 확인',
-                  style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+                  style: TextStyle(color: Color(0xFF6B7280), fontSize: 12.48),
                 ),
               ],
             ),
@@ -209,7 +209,7 @@ class MypageScreen extends StatelessWidget {
       title,
       style: const TextStyle(
         color: Color(0xFF111827),
-        fontSize: 16,
+        fontSize: 16.64,
         fontWeight: FontWeight.w700,
       ),
     );
@@ -233,7 +233,7 @@ class MypageScreen extends StatelessWidget {
               color: const Color(0xFFEBF1FF),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Center(child: Text('✈️', style: TextStyle(fontSize: 20))),
+            child: const Center(child: Text('✈️', style: TextStyle(fontSize: 20.8))),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -244,14 +244,14 @@ class MypageScreen extends StatelessWidget {
                   '일본 여행자 보험 (한화생명)',
                   style: TextStyle(
                     color: Color(0xFF001635),
-                    fontSize: 13,
+                    fontSize: 13.52,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 SizedBox(height: 3),
                 Text(
                   '2025.04.08 – 04.18 · D-7',
-                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11, fontWeight: FontWeight.w400),
+                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11.44, fontWeight: FontWeight.w400),
                 ),
               ],
             ),
@@ -277,7 +277,7 @@ class MypageScreen extends StatelessWidget {
                   '활성',
                   style: TextStyle(
                     color: Color(0xFF2E7D32),
-                    fontSize: 11,
+                    fontSize: 11.44,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -309,7 +309,7 @@ class MypageScreen extends StatelessWidget {
               color: const Color(0xFFF0F4FF),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Center(child: Text('📂', style: TextStyle(fontSize: 22))),
+            child: const Center(child: Text('📂', style: TextStyle(fontSize: 22.88))),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -320,14 +320,14 @@ class MypageScreen extends StatelessWidget {
                   '이전 보험 내역 보기',
                   style: TextStyle(
                     color: Color(0xFF001635),
-                    fontSize: 13,
+                    fontSize: 13.52,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
                 SizedBox(height: 3),
                 Text(
                   '만료된 보험 기록 전체 조회',
-                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11, fontWeight: FontWeight.w400,),
+                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11.44, fontWeight: FontWeight.w400,),
                 ),
               ],
             ),
@@ -390,7 +390,7 @@ class MypageScreen extends StatelessWidget {
               color: const Color(0xFFF0F4FF),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 20))),
+            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 20.8))),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -401,14 +401,14 @@ class MypageScreen extends StatelessWidget {
                   title,
                   style: TextStyle(
                     color: Color(0xFF001635),
-                    fontSize: 13,
+                    fontSize: 13.52,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11, fontWeight: FontWeight.w400,),
+                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11.44, fontWeight: FontWeight.w400,),
                 ),
               ],
             ),
@@ -424,7 +424,7 @@ class MypageScreen extends StatelessWidget {
                 badge,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 11,
+                  fontSize: 11.44,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -456,7 +456,7 @@ class MypageScreen extends StatelessWidget {
           '로그아웃',
           style: TextStyle(
             color: Color(0xFF4A6080),
-            fontSize: 13,
+            fontSize: 13.52,
             fontWeight: FontWeight.w400,
           ),
         ),
@@ -473,7 +473,7 @@ class MypageScreen extends StatelessWidget {
           '회원 탈퇴',
           style: TextStyle(
             color: Color(0xFFDC9995),
-            fontSize: 12,
+            fontSize: 12.48,
             fontWeight: FontWeight.w400,
           ),
         ),
