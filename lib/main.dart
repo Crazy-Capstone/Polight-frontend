@@ -68,12 +68,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           selectedItemColor: _activeColor,
           unselectedItemColor: _inactiveColor,
           selectedLabelStyle: GoogleFonts.notoSansKr(
-            fontSize: 10,
+            fontSize: 10.4,
             fontWeight: FontWeight.w700,
             color: _activeColor,
           ),
           unselectedLabelStyle: GoogleFonts.notoSansKr(
-            fontSize: 10,
+            fontSize: 10.4,
             fontWeight: FontWeight.w600,
             color: _inactiveColor,
           ),

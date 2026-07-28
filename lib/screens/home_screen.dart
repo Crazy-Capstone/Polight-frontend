@@ -128,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
               _getGreeting(),
               style: const TextStyle(
                 color: Color(0xFF6B7280),
-                fontSize: 14,
+                fontSize: 14.56,
               ),
             ),
             const SizedBox(height: 4),
@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
               '내 여행 현황',
               style: TextStyle(
                 color: Color(0xFF001635),
-                fontSize: 22,
+                fontSize: 22.88,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -196,11 +196,11 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
-              const Text('📍', style: TextStyle(fontSize: 13)),
+              const Text('📍', style: TextStyle(fontSize: 13.52)),
               const SizedBox(width: 4),
               const Text(
                 '현재 여행 중',
-                style: TextStyle(color: Color(0xFF9EBEFE), fontSize: 12, fontWeight: FontWeight.w400),
+                style: TextStyle(color: Color(0xFF9EBEFE), fontSize: 12.48, fontWeight: FontWeight.w400),
               ),
             ],
           ),
@@ -221,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(width: 8),
                       Text(
                         '위치 불러오는 중...',
-                        style: TextStyle(color: Colors.white54, fontSize: 16),
+                        style: TextStyle(color: Colors.white54, fontSize: 16.64),
                       ),
                     ],
                   ),
@@ -230,14 +230,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   _locationText,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 24,
+                    fontSize: 24.96,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
           const SizedBox(height: 6),
           const Text(
             '2025. 04. 08 — 04. 18 · D-7',
-            style: TextStyle(color: Color(0xFFA6C8E8), fontSize: 12,fontWeight: FontWeight.w400),
+            style: TextStyle(color: Color(0xFFA6C8E8), fontSize: 12.48,fontWeight: FontWeight.w400),
           ),
           const SizedBox(height: 16),
           const Divider(color: Colors.white24, height: 1),
@@ -258,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       '보험 활성',
                       style: TextStyle(
                         color: Color(0xFF9EBEFE),
-                        fontSize: 11,
+                        fontSize: 11.44,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -270,7 +270,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 '보장률 92%',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: 12.48,
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -290,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> {
           '빠른 메뉴',
           style: TextStyle(
             color: Color(0xFF001635),
-            fontSize: 16,
+            fontSize: 16.64,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -306,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
               subtitleColor: const Color(0xFFC0392B),
               borderColor: const Color(0xFFFFCCCC),
             )),
-            const SizedBox(width: 12),
+            const SizedBox(width: 6),
             Expanded(child: _buildQuickMenuCard(
               emoji: '📄',
               iconBgColor: const Color(0xFFEBF1FF),
@@ -351,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: iconBgColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22))),
+            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22.88))),
           ),
           const SizedBox(width: 12),
           Column(
@@ -361,14 +361,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 title,
                 style: const TextStyle(
                   color: Color(0xFF111827),
-                  fontSize: 14,
+                  fontSize: 14.56,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: TextStyle(color: subtitleColor, fontSize: 12),
+                style: TextStyle(color: subtitleColor, fontSize: 12.48),
               ),
             ],
           ),
@@ -387,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
           '보험 현황 요약',
           style: TextStyle(
             color: Color(0xFF001635),
-            fontSize: 16,
+            fontSize: 16.64,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -431,11 +431,11 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   children: [
-                    Text('🤖', style: TextStyle(fontSize: 14)),
+                    Text('🤖', style: TextStyle(fontSize: 14.56)),
                     SizedBox(width: 4),
                     Text(
                       'AI 어시스턴트',
-                      style: TextStyle(color: Color(0xFFCEDDFE), fontSize: 12),
+                      style: TextStyle(color: Color(0xFFCEDDFE), fontSize: 12.48),
                     ),
                   ],
                 ),
@@ -444,7 +444,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   '무엇이든 바로 물어보세요',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
+                    fontSize: 14.56,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -463,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 '채팅하기',
                 style: TextStyle(
                   color: Color(0xFF001635),
-                  fontSize: 12,
+                  fontSize: 12.48,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -491,20 +491,20 @@ class _InsuranceItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 28)),
+        Text(emoji, style: const TextStyle(fontSize: 29.12)),
         const SizedBox(height: 8),
         Text(
           label,
           style: const TextStyle(
             color: Color(0xFF111827),
-            fontSize: 13,
+            fontSize: 13.52,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           amount,
-          style: const TextStyle(color: Color(0xFF6B7280), fontSize: 11),
+          style: const TextStyle(color: Color(0xFF6B7280), fontSize: 11.44),
         ),
       ],
     );

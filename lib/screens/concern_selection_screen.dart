@@ -122,7 +122,7 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
                     Text(
                       '걱정되는 상황 선택',
                       style: GoogleFonts.notoSansKr(
-                        fontSize: 18,
+                        fontSize: 18.72,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF001635),
                       ),
@@ -130,7 +130,7 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
                     Text(
                       '선택한 항목을 보장 내역 상단에 먼저 보여드려요',
                       style: GoogleFonts.notoSansKr(
-                        fontSize: 11,
+                        fontSize: 11.44,
                         fontWeight: FontWeight.w400,
                         color: const Color(0xFF4A6080),
                       ),
@@ -193,7 +193,7 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
               child: Text(
                 cat,
                 style: GoogleFonts.notoSansKr(
-                  fontSize: 13,
+                  fontSize: 13.52,
                   fontWeight: FontWeight.w600,
                   color: isSelected ? const Color(0xFF0066C3) : const Color(0xFF4A6080),
                 ),
@@ -212,7 +212,7 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
         Text(
           category.name,
           style: GoogleFonts.notoSansKr(
-            fontSize: 13,
+            fontSize: 13.52,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF001635),
           ),
@@ -251,12 +251,12 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(item.emoji, style: const TextStyle(fontSize: 26)),
+                  Text(item.emoji, style: const TextStyle(fontSize: 27.04)),
                   const SizedBox(height: 6),
                   Text(
                     item.label,
                     style: GoogleFonts.notoSansKr(
-                      fontSize: 11,
+                      fontSize: 11.44,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF001635),
                     ),
@@ -306,7 +306,7 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
                 Text(
                   '선택한 항목',
                   style: GoogleFonts.notoSansKr(
-                    fontSize: 13,
+                    fontSize: 13.52,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF4A6080),
                   ),
@@ -321,7 +321,7 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
                   child: Text(
                     '${_selectedConcerns.length}개',
                     style: GoogleFonts.notoSansKr(
-                      fontSize: 12,
+                      fontSize: 12.48,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF0066C3),
                     ),
@@ -350,7 +350,7 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
                 child: Text(
                   '다음',
                   style: GoogleFonts.notoSansKr(
-                    fontSize: 15,
+                    fontSize: 15.6,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -402,7 +402,7 @@ class _ConcernStepCircle extends StatelessWidget {
               : Text(
                   '$number',
                   style: GoogleFonts.notoSansKr(
-                    fontSize: 12,
+                    fontSize: 12.48,
                     fontWeight: FontWeight.w700,
                     color: isActive ? Colors.white : const Color(0xFF8BA3CC),
                   ),
@@ -412,7 +412,7 @@ class _ConcernStepCircle extends StatelessWidget {
         Text(
           label,
           style: GoogleFonts.notoSansKr(
-            fontSize: 10,
+            fontSize: 10.4,
             fontWeight: FontWeight.w700,
             color: (isCompleted || isActive)
                 ? const Color(0xFF0066C3)

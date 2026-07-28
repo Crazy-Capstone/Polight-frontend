@@ -118,7 +118,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     Text(
                       '증권 업로드',
                       style: GoogleFonts.notoSansKr(
-                        fontSize: 18,
+                        fontSize: 18.72,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF001635),
                       ),
@@ -126,7 +126,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     Text(
                       '보험 PDF를 업로드해 주세요',
                       style: GoogleFonts.notoSansKr(
-                        fontSize: 11,
+                        fontSize: 11.44,
                         fontWeight: FontWeight.w400,
                         color: const Color(0xFF4A6080),
                       ),
@@ -161,7 +161,7 @@ class _UploadScreenState extends State<UploadScreen> {
         Text(
           '보험 증권 PDF를 업로드하면',
           style: GoogleFonts.notoSansKr(
-            fontSize: 14,
+            fontSize: 14.56,
             fontWeight: FontWeight.w400,
             color: const Color(0xFF4A6080),
           ),
@@ -171,7 +171,7 @@ class _UploadScreenState extends State<UploadScreen> {
         Text(
           'AI가 보장 내용을 자동으로 분석해드려요',
           style: GoogleFonts.notoSansKr(
-            fontSize: 14,
+            fontSize: 14.56,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF001635),
           ),
@@ -215,7 +215,7 @@ class _UploadScreenState extends State<UploadScreen> {
           Text(
             'PDF 파일을 선택해 주세요',
             style: GoogleFonts.notoSansKr(
-              fontSize: 13,
+              fontSize: 13.52,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF001635),
             ),
@@ -224,7 +224,7 @@ class _UploadScreenState extends State<UploadScreen> {
           Text(
             '최대 20MB · PDF 형식',
             style: GoogleFonts.notoSansKr(
-              fontSize: 11,
+              fontSize: 11.44,
               fontWeight: FontWeight.w400,
               color: const Color(0xFF8BA3CC),
             ),
@@ -256,7 +256,7 @@ class _UploadScreenState extends State<UploadScreen> {
                   : Text(
                       '파일 선택하기',
                       style: GoogleFonts.notoSansKr(
-                        fontSize: 13,
+                        fontSize: 13.52,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -307,7 +307,7 @@ class _UploadScreenState extends State<UploadScreen> {
           Text(
             file.name,
             style: GoogleFonts.notoSansKr(
-              fontSize: 13,
+              fontSize: 13.52,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF001635),
             ),
@@ -319,7 +319,7 @@ class _UploadScreenState extends State<UploadScreen> {
           Text(
             sizeText,
             style: GoogleFonts.notoSansKr(
-              fontSize: 11,
+              fontSize: 11.44,
               fontWeight: FontWeight.w400,
               color: const Color(0xFF8BA3CC),
             ),
@@ -342,7 +342,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     child: Text(
                       '다시 선택',
                       style: GoogleFonts.notoSansKr(
-                        fontSize: 13,
+                        fontSize: 13.52,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -366,7 +366,7 @@ class _UploadScreenState extends State<UploadScreen> {
                     child: Text(
                       '파일 변경',
                       style: GoogleFonts.notoSansKr(
-                        fontSize: 13,
+                        fontSize: 13.52,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -389,7 +389,7 @@ class _UploadScreenState extends State<UploadScreen> {
           child: Text(
             '또는',
             style: GoogleFonts.notoSansKr(
-              fontSize: 11,
+              fontSize: 11.44,
               fontWeight: FontWeight.w400,
               color: const Color(0xFF8BA3CC),
             ),
@@ -412,7 +412,7 @@ class _UploadScreenState extends State<UploadScreen> {
         Text(
           '최근 사용한 파일',
           style: GoogleFonts.notoSansKr(
-            fontSize: 13,
+            fontSize: 13.52,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF001635),
           ),
@@ -449,7 +449,7 @@ class _UploadScreenState extends State<UploadScreen> {
                   Text(
                     file.name,
                     style: GoogleFonts.notoSansKr(
-                      fontSize: 12,
+                      fontSize: 12.48,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF001635),
                     ),
@@ -458,7 +458,7 @@ class _UploadScreenState extends State<UploadScreen> {
                   Text(
                     file.meta,
                     style: GoogleFonts.notoSansKr(
-                      fontSize: 10,
+                      fontSize: 10.4,
                       fontWeight: FontWeight.w400,
                       color: const Color(0xFF4A6080),
                     ),
@@ -505,7 +505,7 @@ class _UploadScreenState extends State<UploadScreen> {
           child: Text(
             '다음',
             style: GoogleFonts.notoSansKr(
-              fontSize: 15,
+              fontSize: 15.6,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -544,7 +544,7 @@ class _StepCircle extends StatelessWidget {
           child: Text(
             '$number',
             style: GoogleFonts.notoSansKr(
-              fontSize: 12,
+              fontSize: 12.48,
               fontWeight: FontWeight.w700,
               color: isActive ? Colors.white : const Color(0xFF8BA3CC),
             ),
@@ -554,7 +554,7 @@ class _StepCircle extends StatelessWidget {
         Text(
           label,
           style: GoogleFonts.notoSansKr(
-            fontSize: 10,
+            fontSize: 10.4,
             fontWeight: FontWeight.w700,
             color: isActive ? const Color(0xFF0066C3) : const Color(0xFF8BA3CC),
           ),
