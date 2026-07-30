@@ -5,8 +5,12 @@ import 'screens/home_screen.dart';
 import 'screens/coverage_screen.dart';
 import 'screens/chatbot_screen.dart';
 import 'screens/mypage_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   runApp(const MyApp());
 }
 
@@ -25,6 +29,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -119,3 +124,4 @@ class _NavItem {
 
   const _NavItem({required this.icon, required this.label});
 }
+

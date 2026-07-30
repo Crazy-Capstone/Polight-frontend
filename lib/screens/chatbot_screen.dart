@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../core/models/chat_message.dart';
@@ -132,7 +133,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           );
         }
       });
-    } catch (_) {
+    } catch (e, s) {
+      developer.log('병원 검색 중 예외 발생',
+          name: 'ChatbotScreen', error: e, stackTrace: s);
       if (!mounted) return;
       setState(() {
         _messages.removeLast();
@@ -514,8 +517,8 @@ class _BotMessageWithCards extends StatelessWidget {
                     Text(
                       text,
                       style: const TextStyle(
-                        fontSize: 14.56,
-                        color: Color(0xFF1A2B4A),
+                        fontSize: 12.48,
+                        color: Color(0xFF001635),
                         height: 1.5,
                       ),
                     ),
@@ -543,9 +546,9 @@ class _QuickReplyBar extends StatelessWidget {
 
   static const _chips = [
     '🏥 주변 병원을 보여줘',
-    '📋 증권 확인',
+    '📄 증권 확인',
     '💰 보장 한도',
-    '💬 통역 지원',
+    '🗣 통역 지원',
     '🚑 긴급 연락',
   ];
 
@@ -555,47 +558,46 @@ class _QuickReplyBar extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: Color(0xFFEEF2FF), width: 1)),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: _chips.map((chip) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () => onChipTap(chip),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: _chips.map((chip) {
+          final isEmergency = chip.contains('🚑');
+          return GestureDetector(
+            onTap: () => onChipTap(chip),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isEmergency
+                      ? const Color(0xFFFFCDD2)
+                      : const Color(0xFFBFD0FF),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3B5BDB).withValues(alpha: 0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border:
-                        Border.all(color: const Color(0xFFBFD0FF), width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF3B5BDB).withValues(alpha: 0.06),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    chip,
-                    style: const TextStyle(
-                      fontSize: 13.52,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF1D3E8F),
-                    ),
-                  ),
+                ],
+              ),
+              child: Text(
+                chip,
+                style: TextStyle(
+                  fontSize: 13.52,
+                  fontWeight: FontWeight.w500,
+                  color: isEmergency
+                      ? const Color(0xFFC0392B)
+                      : const Color(0xFF1D3E8F),
                 ),
               ),
-            );
-          }).toList(),
-        ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

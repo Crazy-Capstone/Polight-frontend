@@ -11,7 +11,10 @@ class ChatMessage {
   final List<HospitalResult> hospitals;
   final DateTime timestamp;
 
-  ChatMessage.bot(this.text, {this.hospitals = const []})
+  final double? userLat;
+  final double? userLng;
+
+  ChatMessage.bot(this.text, {this.hospitals = const [], this.userLat, this.userLng})
       : sender = MessageSender.bot,
         contentType = hospitals.isNotEmpty
             ? MessageContentType.hospitalCards
@@ -22,6 +25,8 @@ class ChatMessage {
       : sender = MessageSender.user,
         contentType = MessageContentType.text,
         hospitals = const [],
+        userLat = null,
+        userLng = null,
         timestamp = DateTime.now();
 
   ChatMessage.loading()
@@ -29,6 +34,8 @@ class ChatMessage {
         contentType = MessageContentType.loading,
         text = '',
         hospitals = const [],
+        userLat = null,
+        userLng = null,
         timestamp = DateTime.now();
 
   String get formattedTime {
