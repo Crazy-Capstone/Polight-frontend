@@ -2,9 +2,10 @@ import 'dart:developer' as developer;
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../core/models/chat_message.dart';
-import '../core/models/hospital_result.dart';
-import '../core/services/hospital_service.dart';
-import '../widgets/hospital_card.dart';
+import '../core/models/place_category.dart';
+import '../core/models/place_result.dart';
+import '../core/services/place_service.dart';
+import '../widgets/place_card.dart';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -16,15 +17,11 @@ class ChatbotScreen extends StatefulWidget {
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _inputController = TextEditingController();
-  final HospitalService _hospitalService = HospitalService();
+  final PlaceService _placeService = PlaceService();
 
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
 
-  static const _hospitalKeywords = [
-    '병원', '응급실', '의원', '클리닉', '주변 병원', '가까운 병원', '병원 찾기',
-    '주변 병원을 보여줘', '병원 보여줘', '병원 알려줘',
-  ];
   static const _negationWords = ['싫어', '말고', '아니'];
 
   static const _flightDelayKeywords = ['지연', '연착'];
@@ -51,9 +48,13 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     super.dispose();
   }
 
-  bool _isHospitalIntent(String text) {
-    if (_negationWords.any((w) => text.contains(w))) return false;
-    return _hospitalKeywords.any((w) => text.contains(w));
+  /// 문장에서 찾아야 할 장소 종류를 골라낸다. 해당 없으면 null.
+  PlaceCategory? _detectPlaceCategory(String text) {
+    if (_negationWords.any((w) => text.contains(w))) return null;
+    for (final category in PlaceCategory.values) {
+      if (category.keywords.any((w) => text.contains(w))) return category;
+    }
+    return null;
   }
 
   Future<void> _sendMessage(String text) async {
@@ -64,8 +65,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     setState(() => _messages.add(ChatMessage.user(trimmed)));
     _scrollToBottom();
 
-    if (_isHospitalIntent(trimmed)) {
-      await _handleHospitalSearch();
+    final category = _detectPlaceCategory(trimmed);
+    if (category != null) {
+      await _handlePlaceSearch(category);
     } else if (_isFlightDelayIntent(trimmed)) {
       await _handleFlightDelayCompensation();
     } else {
@@ -74,7 +76,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       setState(() {
         _messages.add(
           ChatMessage.bot(
-            '죄송해요, 현재는 병원 찾기 기능만 지원하고 있어요.\n하단의 "🏥 병원 찾기"를 눌러보세요!',
+            '죄송해요, 현재는 주변 병원 · 경찰서 · 대사관 찾기를 지원하고 있어요.\n하단의 빠른 답변 버튼을 눌러보세요!',
           ),
         );
       });
@@ -109,7 +111,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     _scrollToBottom();
   }
 
-  Future<void> _handleHospitalSearch() async {
+  Future<void> _handlePlaceSearch(PlaceCategory category) async {
     setState(() {
       _isLoading = true;
       _messages.add(ChatMessage.loading());
@@ -117,31 +119,36 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     _scrollToBottom();
 
     try {
-      final hospitals = await _hospitalService.fetchNearbyHospitals(context);
+      final places = await _placeService.fetchNearbyPlaces(context, category);
       if (!mounted) return;
 
       setState(() {
         _messages.removeLast();
         _isLoading = false;
-        if (hospitals.isEmpty) {
+        if (places.isEmpty) {
           _messages.add(
-            ChatMessage.bot('주변 3km 내에 병원을 찾지 못했어요.\n다시 시도하거나 검색 범위를 넓혀보세요.'),
+            ChatMessage.bot('주변 ${category.formattedRadius} 내에 ${category.label}을(를) '
+                '찾지 못했어요.\n다시 시도하거나 검색 범위를 넓혀보세요.'),
           );
         } else {
           _messages.add(
-            ChatMessage.bot('현재 위치 기준 병원이에요 🏥', hospitals: hospitals),
+            ChatMessage.bot(
+              '현재 위치 기준 ${category.label}이에요 ${category.emoji}',
+              places: places,
+            ),
           );
         }
       });
     } catch (e, s) {
-      developer.log('병원 검색 중 예외 발생',
+      developer.log('${category.label} 검색 중 예외 발생',
           name: 'ChatbotScreen', error: e, stackTrace: s);
       if (!mounted) return;
       setState(() {
         _messages.removeLast();
         _isLoading = false;
         _messages.add(
-          ChatMessage.bot('병원 정보를 불러오는 중 오류가 발생했어요.\n잠시 후 다시 시도해 주세요.'),
+          ChatMessage.bot('${category.label} 정보를 불러오는 중 오류가 발생했어요.\n'
+              '잠시 후 다시 시도해 주세요.'),
         );
       });
     }
@@ -197,11 +204,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     if (msg.sender == MessageSender.user) {
       return _UserMessage(text: msg.text, time: msg.formattedTime);
     }
-    if (msg.contentType == MessageContentType.hospitalCards) {
+    if (msg.contentType == MessageContentType.placeCards) {
       return _BotMessageWithCards(
         text: msg.text,
         time: msg.formattedTime,
-        hospitals: msg.hospitals,
+        places: msg.places,
       );
     }
     return _BotMessage(text: msg.text, time: msg.formattedTime);
@@ -478,15 +485,15 @@ class _UserMessage extends StatelessWidget {
   }
 }
 
-// ── 봇 메시지 + 병원 카드 ─────────────────────────────────────
+// ── 봇 메시지 + 장소 카드 ─────────────────────────────────────
 class _BotMessageWithCards extends StatelessWidget {
   final String text;
   final String time;
-  final List<HospitalResult> hospitals;
+  final List<PlaceResult> places;
   const _BotMessageWithCards({
     required this.text,
     required this.time,
-    required this.hospitals,
+    required this.places,
   });
 
   @override
@@ -522,7 +529,7 @@ class _BotMessageWithCards extends StatelessWidget {
                         height: 1.5,
                       ),
                     ),
-                    ...hospitals.map((h) => HospitalCard(hospital: h)),
+                    ...places.map((p) => PlaceCard(place: p)),
                   ],
                 ),
               ),
@@ -546,6 +553,8 @@ class _QuickReplyBar extends StatelessWidget {
 
   static const _chips = [
     '🏥 주변 병원을 보여줘',
+    '🚓 주변 경찰서를 보여줘',
+    '🏛 주변 대사관을 보여줘',
     '📄 증권 확인',
     '💰 보장 한도',
     '🗣 통역 지원',

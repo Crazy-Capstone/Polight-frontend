@@ -1,4 +1,7 @@
-class HospitalResult {
+import 'place_category.dart';
+
+class PlaceResult {
+  final PlaceCategory category;
   final String name;
   final String address;
   final double distanceMeters;
@@ -6,7 +9,8 @@ class HospitalResult {
   final double lat;
   final double lng;
 
-  const HospitalResult({
+  const PlaceResult({
+    required this.category,
     required this.name,
     required this.address,
     required this.distanceMeters,

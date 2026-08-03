@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import '../core/models/hospital_result.dart';
+import '../core/models/place_result.dart';
 
-class HospitalCard extends StatelessWidget {
-  final HospitalResult hospital;
-  const HospitalCard({super.key, required this.hospital});
+class PlaceCard extends StatelessWidget {
+  final PlaceResult place;
+  const PlaceCard({super.key, required this.place});
 
   @override
   Widget build(BuildContext context) {
+    final badge = place.category.badge;
+
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -24,8 +26,11 @@ class HospitalCard extends StatelessWidget {
               color: const Color(0xFFDCEBFF),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Center(
-              child: Text('🏥', style: TextStyle(fontSize: 20)),
+            child: Center(
+              child: Text(
+                place.category.emoji,
+                style: const TextStyle(fontSize: 20),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -34,7 +39,7 @@ class HospitalCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  hospital.name,
+                  place.name,
                   style: const TextStyle(
                     fontSize: 12.48,
                     fontWeight: FontWeight.w700,
@@ -45,7 +50,7 @@ class HospitalCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '한국어 통역 가능 · ${hospital.formattedDistance}',
+                  '${place.category.subtitle} · ${place.formattedDistance}',
                   style: const TextStyle(
                     fontSize: 10.4,
                     color: Color(0xFF4A6080),
@@ -54,22 +59,24 @@ class HospitalCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F0FE),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Text(
-              '제휴',
-              style: TextStyle(
-                fontSize: 10.4,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF0066C3),
+          if (badge != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F0FE),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                badge,
+                style: const TextStyle(
+                  fontSize: 10.4,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0066C3),
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );
