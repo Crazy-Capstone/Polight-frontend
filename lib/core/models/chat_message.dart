@@ -1,30 +1,30 @@
-import 'hospital_result.dart';
+import 'place_result.dart';
 
 enum MessageSender { bot, user }
 
-enum MessageContentType { text, hospitalCards, loading }
+enum MessageContentType { text, placeCards, loading }
 
 class ChatMessage {
   final MessageSender sender;
   final MessageContentType contentType;
   final String text;
-  final List<HospitalResult> hospitals;
+  final List<PlaceResult> places;
   final DateTime timestamp;
 
   final double? userLat;
   final double? userLng;
 
-  ChatMessage.bot(this.text, {this.hospitals = const [], this.userLat, this.userLng})
+  ChatMessage.bot(this.text, {this.places = const [], this.userLat, this.userLng})
       : sender = MessageSender.bot,
-        contentType = hospitals.isNotEmpty
-            ? MessageContentType.hospitalCards
+        contentType = places.isNotEmpty
+            ? MessageContentType.placeCards
             : MessageContentType.text,
         timestamp = DateTime.now();
 
   ChatMessage.user(this.text)
       : sender = MessageSender.user,
         contentType = MessageContentType.text,
-        hospitals = const [],
+        places = const [],
         userLat = null,
         userLng = null,
         timestamp = DateTime.now();
@@ -33,7 +33,7 @@ class ChatMessage {
       : sender = MessageSender.bot,
         contentType = MessageContentType.loading,
         text = '',
-        hospitals = const [],
+        places = const [],
         userLat = null,
         userLng = null,
         timestamp = DateTime.now();
