@@ -10,7 +10,7 @@ class ConcernSelectionScreen extends StatefulWidget {
 
 class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
   String _selectedCategory = '전체';
-  final Set<String> _selectedConcerns = {'다치거나 아플까 봐'};
+  final Set<String> _selectedConcerns = {};
 
   static const List<String> _categories = ['전체', '건강·의료', '분실·도난', '항공·기타'];
 
@@ -158,14 +158,14 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
         _ConcernStepLine(),
         _ConcernStepCircle(
           number: 2,
-          label: '걱정 선택',
-          state: _ConcernStepState.active,
+          label: '여행 정보',
+          state: _ConcernStepState.completed,
         ),
         _ConcernStepLine(),
         _ConcernStepCircle(
           number: 3,
-          label: '보장 확인',
-          state: _ConcernStepState.inactive,
+          label: '걱정 선택',
+          state: _ConcernStepState.active,
         ),
       ],
     );
