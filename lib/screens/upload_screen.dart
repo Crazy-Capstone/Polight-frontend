@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:file_picker/file_picker.dart';
-import 'concern_selection_screen.dart';
+import 'trip_info_screen.dart';
 
 class UploadScreen extends StatefulWidget {
   const UploadScreen({super.key});
@@ -148,9 +148,9 @@ class _UploadScreenState extends State<UploadScreen> {
       children: [
         _StepCircle(number: 1, label: 'PDF 업로드', isActive: true),
         _StepLine(),
-        _StepCircle(number: 2, label: '걱정 선택', isActive: false),
+        _StepCircle(number: 2, label: '여행 정보', isActive: false),
         _StepLine(),
-        _StepCircle(number: 3, label: '보장 확인', isActive: false),
+        _StepCircle(number: 3, label: '걱정 선택', isActive: false),
       ],
     );
   }
@@ -340,7 +340,7 @@ class _UploadScreenState extends State<UploadScreen> {
                       ),
                     ),
                     child: Text(
-                      '다시 선택',
+                      '파일 삭제',
                       style: GoogleFonts.notoSansKr(
                         fontSize: 13.52,
                         fontWeight: FontWeight.w600,
@@ -488,7 +488,7 @@ class _UploadScreenState extends State<UploadScreen> {
           onPressed: _selectedFile != null
               ? () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const ConcernSelectionScreen(),
+                      builder: (_) => const TripInfoScreen(),
                     ),
                   )
               : null,
