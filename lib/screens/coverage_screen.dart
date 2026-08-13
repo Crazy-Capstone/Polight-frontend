@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'coverage_detail_screen.dart';
+import '../widgets/trip_select_sheet.dart';
 
 void main() {
   runApp(const MyApp());
@@ -47,8 +48,23 @@ class CoverageItem {
 }
 
 // ── 화면 ─────────────────────────────────────────────────────
-class CoverageScreen extends StatelessWidget {
-  const CoverageScreen({super.key});
+class CoverageScreen extends StatefulWidget {
+  /// 이전 보험 내역 등에서 특정 여행의 보장을 바로 열 때 지정한다.
+  final Trip? initialTrip;
+
+  const CoverageScreen({super.key, this.initialTrip});
+
+  @override
+  State<CoverageScreen> createState() => _CoverageScreenState();
+}
+
+class _CoverageScreenState extends State<CoverageScreen> {
+  late Trip _selectedTrip = widget.initialTrip ?? kTrips.first;
+
+  Future<void> _openTripSelect() async {
+    final picked = await showTripSelectSheet(context, selected: _selectedTrip);
+    if (picked != null) setState(() => _selectedTrip = picked);
+  }
 
   static const List<CoverageItem> _items = [
     CoverageItem(
@@ -172,17 +188,36 @@ class CoverageScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      '보장 내역',
-                      style: TextStyle(
-                        fontSize: 20.8,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF001635),
+                    // push 로 열렸을 때만 뒤로가기를 둔다 (탭으로 볼 때는 불필요)
+                    if (Navigator.canPop(context)) ...[
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 18,
+                          color: Color(0xFF001635),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
+                    const Expanded(
+                      child: Text(
+                        '보장 내역',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 20.8,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF001635),
+                        ),
                       ),
                     ),
-                    _TripBadge(),
+                    const SizedBox(width: 12),
+                    _TripBadge(
+                      trip: _selectedTrip,
+                      onTap: _openTripSelect,
+                    ),
                   ],
                 ),
               ),
@@ -200,7 +235,7 @@ class CoverageScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: _TripDateBanner(),
+                child: _TripDateBanner(trip: _selectedTrip),
               ),
             ),
 
@@ -227,38 +262,48 @@ class CoverageScreen extends StatelessWidget {
   }
 }
 
-// ── 여행 뱃지 ─────────────────────────────────────────────────
+// ── 여행 뱃지 (여행 선택 시트를 여는 드롭다운) ──────────────────
 class _TripBadge extends StatelessWidget {
+  final Trip trip;
+  final VoidCallback onTap;
+
+  const _TripBadge({required this.trip, required this.onTap});
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: Color(0xFFEBF1FF),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFCEDDFE)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('🇯🇵', style: TextStyle(fontSize: 16.64)),
-          SizedBox(width: 2),
-          Text(
-            '일본 여행',
-            style: TextStyle(
-              fontSize: 11.44,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF004D9D),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEAF2FE),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFB9D6FB), width: 1.2),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (trip.flag.isNotEmpty) ...[
+              Text(trip.flag, style: const TextStyle(fontSize: 15)),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              trip.name,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0868DD),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 10),
+            const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 20,
+              color: Color(0xFF0868DD),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -266,6 +311,10 @@ class _TripBadge extends StatelessWidget {
 
 // ── 여행 기간 배너 ─────────────────────────────────────────────
 class _TripDateBanner extends StatelessWidget {
+  final Trip trip;
+
+  const _TripDateBanner({required this.trip});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -280,27 +329,37 @@ class _TripDateBanner extends StatelessWidget {
           Container(
             width: 10,
             height: 10,
-            decoration: const BoxDecoration(
-              color: Color(0xFF4CAF50),
+            decoration: BoxDecoration(
+              color: trip.isExpired
+                  ? const Color(0xFFB4C4D8)
+                  : const Color(0xFF22C55E),
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 7),
-          const Text(
-            '2025. 04. 08 — 04. 18',
-            style: TextStyle(
-              fontSize: 12.48,
-              fontWeight: FontWeight.w400,
-              color: Color(0xFF001635),
+          // 기간이 길어도 배너가 넘치지 않게 남은 폭을 모두 쓴다
+          Expanded(
+            child: Text(
+              trip.dateRange,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.48,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF001635),
+              ),
             ),
           ),
-          const Spacer(),
-            const Text(
-            'D-7 남음',
+          const SizedBox(width: 8),
+          Text(
+            // 만료된 여행은 남은 일수 대신 상태를 보여준다
+            trip.isExpired ? '만료' : 'D-7 남음',
             style: TextStyle(
               fontSize: 12.48,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF0066C3),
+              color: trip.isExpired
+                  ? const Color(0xFF9FB4CE)
+                  : const Color(0xFF0066C3),
             ),
           ),
         ],

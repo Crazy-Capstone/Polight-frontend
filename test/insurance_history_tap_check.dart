@@ -1,6 +1,7 @@
 // 임시 검증용 테스트 (뒤로가기 · 연도 필터 확인 후 삭제).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:polight_frontend/screens/coverage_screen.dart';
 import 'package:polight_frontend/screens/insurance_history_screen.dart';
 
 void main() {
@@ -73,5 +74,51 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('총 0건'), findsOne);
     expect(find.text('2023년 보험 기록이 없습니다'), findsOne);
+  });
+
+  // 새 화면 안에서만 찾는다(뒤에 남아 있는 목록 화면과 겹치지 않도록).
+  Finder inCoverage(Finder matching) => find.descendant(
+        of: find.byType(CoverageScreen),
+        matching: matching,
+      );
+
+  testWidgets('여행 카드를 누르면 그 여행의 보장 내역으로 이동한다', (tester) async {
+    await pumpPushedScreen(tester);
+    expect(find.byType(CoverageScreen), findsNothing);
+
+    await tester.tap(find.text('파리 출장'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CoverageScreen), findsOne);
+    expect(find.text('보장 내역'), findsOne);
+    // 누른 여행이 뱃지와 기간 배너에 반영된다
+    expect(inCoverage(find.text('파리 출장')), findsOne);
+    expect(inCoverage(find.text('2024.11.03 – 11.09')), findsOne);
+    // 만료된 여행이므로 남은 일수가 아니라 상태를 보여준다
+    expect(inCoverage(find.text('만료')), findsOne);
+    expect(find.text('D-7 남음'), findsNothing);
+  });
+
+  testWidgets('진행 중인 여행을 누르면 진행 상태로 열린다', (tester) async {
+    await pumpPushedScreen(tester);
+
+    await tester.tap(find.text('일본 여행'));
+    await tester.pumpAndSettle();
+
+    expect(inCoverage(find.text('일본 여행')), findsOne);
+    expect(inCoverage(find.text('D-7 남음')), findsOne);
+  });
+
+  testWidgets('보장 내역에서 뒤로가면 목록으로 돌아온다', (tester) async {
+    await pumpPushedScreen(tester);
+
+    await tester.tap(find.text('파리 출장'));
+    await tester.pumpAndSettle();
+    await tester.tap(inCoverage(find.byIcon(Icons.arrow_back_ios_new_rounded)));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CoverageScreen), findsNothing);
+    expect(find.text('이전 보험 내역'), findsOne);
+    expect(find.text('총 6건'), findsOne);
   });
 }

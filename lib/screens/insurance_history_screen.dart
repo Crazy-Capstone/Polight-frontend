@@ -1,19 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../widgets/trip_select_sheet.dart';
+import 'coverage_screen.dart';
 
 // ── 데이터 모델 ───────────────────────────────────────────────
 class PastInsuranceItem {
   final String tripTitle;
-  final String period;
+  final String dateRange;
+  final String durationLabel;
   final String insurer;
+  final String flag;
   final int year;
 
   const PastInsuranceItem({
     required this.tripTitle,
-    required this.period,
+    required this.dateRange,
+    required this.durationLabel,
     required this.insurer,
+    required this.flag,
     required this.year,
   });
+
+  /// 보장 내역 화면에 넘길 여행 정보.
+  /// 진행 중인 여행으로 등록돼 있으면 그 정보를 그대로 쓴다
+  /// (보장 내역 탭과 상태 표시가 어긋나지 않도록).
+  Trip get asTrip => kTrips.firstWhere(
+        (trip) => trip.name == tripTitle,
+        orElse: () => Trip(name: tripTitle, dateRange: dateRange, flag: flag),
+      );
 }
 
 // ── 화면 ─────────────────────────────────────────────────────
@@ -29,38 +43,50 @@ class _InsuranceHistoryScreenState extends State<InsuranceHistoryScreen> {
   static const List<PastInsuranceItem> _items = [
     PastInsuranceItem(
       tripTitle: '일본 여행',
-      period: '2025.04.08 – 04.18 · 10일',
+      dateRange: '2025.04.08 – 04.18',
+      durationLabel: '10일',
       insurer: '한화생명',
+      flag: '🇯🇵',
       year: 2025,
     ),
     PastInsuranceItem(
       tripTitle: '베트남 다낭 가족여행',
-      period: '2025.01.11 – 01.17 · 6일',
+      dateRange: '2025.01.11 – 01.17',
+      durationLabel: '6일',
       insurer: '삼성화재',
+      flag: '🇻🇳',
       year: 2025,
     ),
     PastInsuranceItem(
       tripTitle: '파리 출장',
-      period: '2024.11.03 – 11.09 · 6일',
+      dateRange: '2024.11.03 – 11.09',
+      durationLabel: '6일',
       insurer: 'KB손해보험',
+      flag: '🇫🇷',
       year: 2024,
     ),
     PastInsuranceItem(
       tripTitle: '태국 방콕 혼자 여행',
-      period: '2024.08.20 – 08.27 · 7일',
+      dateRange: '2024.08.20 – 08.27',
+      durationLabel: '7일',
       insurer: '현대해상',
+      flag: '🇹🇭',
       year: 2024,
     ),
     PastInsuranceItem(
       tripTitle: '미국 서부 로드트립',
-      period: '2024.05.02 – 05.14 · 12일',
+      dateRange: '2024.05.02 – 05.14',
+      durationLabel: '12일',
       insurer: '한화생명',
+      flag: '🇺🇸',
       year: 2024,
     ),
     PastInsuranceItem(
       tripTitle: '스페인 신혼여행',
-      period: '2024.02.09 – 02.19 · 10일',
+      dateRange: '2024.02.09 – 02.19',
+      durationLabel: '10일',
       insurer: '삼성화재',
+      flag: '🇪🇸',
       year: 2024,
     ),
   ];
@@ -268,63 +294,80 @@ class _HistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        // 강조되지 않은 카드도 동일한 테두리 두께를 유지해 내용 위치를 맞춘다
-        border: Border.all(
-          color: isHighlighted ? const Color(0xFFBBD8FB) : Colors.white,
-          width: 1.5,
+    return GestureDetector(
+      onTap: () {
+        // 해당 여행의 보장 내역으로 이동
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CoverageScreen(initialTrip: item.asTrip),
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          // 강조되지 않은 카드도 동일한 테두리 두께를 유지해 내용 위치를 맞춘다
+          border: Border.all(
+            color: isHighlighted ? const Color(0xFFBBD8FB) : Colors.white,
+            width: 1.5,
+          ),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(15.5, 10.7, 16.5, 14.1),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.tripTitle,
-                    style: GoogleFonts.notoSansKr(
-                      fontSize: 15,
-                      height: 1.27,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF001635),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(15.5, 10.7, 16.5, 14.1),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.tripTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.notoSansKr(
+                        fontSize: 15,
+                        height: 1.27,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF001635),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 3.7),
-                  Text(
-                    item.period,
-                    style: GoogleFonts.notoSansKr(
-                      fontSize: 12.5,
-                      height: 1.27,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF5B7BA6),
+                    const SizedBox(height: 3.7),
+                    Text(
+                      '${item.dateRange} · ${item.durationLabel}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.notoSansKr(
+                        fontSize: 12.5,
+                        height: 1.27,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFF5B7BA6),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 3.2),
-                  Text(
-                    '${item.insurer} · 만료',
-                    style: GoogleFonts.notoSansKr(
-                      fontSize: 11.5,
-                      height: 1.29,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF9FB4CE),
+                    const SizedBox(height: 3.2),
+                    Text(
+                      '${item.insurer} · 만료',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.notoSansKr(
+                        fontSize: 11.5,
+                        height: 1.29,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFF9FB4CE),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(
-              Icons.chevron_right_rounded,
-              size: 20,
-              color: Color(0xFFB4C4D8),
-            ),
-          ],
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: Color(0xFFB4C4D8),
+              ),
+            ],
+          ),
         ),
       ),
     );
