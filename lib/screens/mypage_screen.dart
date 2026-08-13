@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'insurance_history_screen.dart';
 
 class MypageScreen extends StatelessWidget {
   const MypageScreen({super.key});
@@ -22,7 +23,7 @@ class MypageScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   _buildCurrentInsuranceCard(),
                   const SizedBox(height: 10),
-                  _buildPrevInsuranceCard(),
+                  _buildPrevInsuranceCard(context),
                   const SizedBox(height: 24),
                   _buildSectionTitle('계정 관리'),
                   const SizedBox(height: 10),
@@ -292,48 +293,56 @@ class MypageScreen extends StatelessWidget {
   }
 
   // ─── 이전 보험 내역 카드 ──────────────────────────────────────────────────
-  Widget _buildPrevInsuranceCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E9FF)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0F4FF),
-              borderRadius: BorderRadius.circular(10),
+  Widget _buildPrevInsuranceCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const InsuranceHistoryScreen()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E9FF)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F4FF),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Center(child: Text('📂', style: TextStyle(fontSize: 22.88))),
             ),
-            child: const Center(child: Text('📂', style: TextStyle(fontSize: 22.88))),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '이전 보험 내역 보기',
-                  style: TextStyle(
-                    color: Color(0xFF001635),
-                    fontSize: 13.52,
-                    fontWeight: FontWeight.w400,
+            const SizedBox(width: 14),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '이전 보험 내역 보기',
+                    style: TextStyle(
+                      color: Color(0xFF001635),
+                      fontSize: 13.52,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  '만료된 보험 기록 전체 조회',
-                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11.44, fontWeight: FontWeight.w400,),
-                ),
-              ],
+                  SizedBox(height: 3),
+                  Text(
+                    '만료된 보험 기록 전체 조회',
+                    style: TextStyle(color: Color(0xFF4A6080), fontSize: 11.44, fontWeight: FontWeight.w400,),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF8BA3CC), size: 20),
-        ],
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8BA3CC), size: 20),
+          ],
+        ),
       ),
     );
   }
