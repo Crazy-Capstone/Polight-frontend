@@ -5,8 +5,8 @@ import 'screens/home_screen.dart';
 import 'screens/coverage_screen.dart';
 import 'screens/chatbot_screen.dart';
 import 'screens/mypage_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,11 +25,32 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0066C3)),
       ),
-      home: const MainNavigationScreen(),
+      home: const _RootScreen(),
     );
   }
 }
 
+// ── 앱을 켤 때마다 온보딩부터 보여준다 ────────────────────────
+class _RootScreen extends StatefulWidget {
+  const _RootScreen();
+
+  @override
+  State<_RootScreen> createState() => _RootScreenState();
+}
+
+class _RootScreenState extends State<_RootScreen> {
+  bool _showOnboarding = true;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_showOnboarding) {
+      return OnboardingScreen(
+        onFinished: () => setState(() => _showOnboarding = false),
+      );
+    }
+    return const MainNavigationScreen();
+  }
+}
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
