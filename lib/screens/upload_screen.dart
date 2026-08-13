@@ -356,6 +356,7 @@ class _UploadScreenState extends State<UploadScreen> {
                   child: ElevatedButton(
                     onPressed: _pickFile,
                     style: ElevatedButton.styleFrom(
+
                       backgroundColor: const Color(0xFF0066C3),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
