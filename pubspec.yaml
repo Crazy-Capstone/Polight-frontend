@@ -42,6 +42,8 @@ dependencies:
   # google_maps_flutter: ^2.9.0 # 지도 표시
   permission_handler: ^11.3.1
   flutter_dotenv: ^5.2.1
+  webview_flutter: ^4.13.1
+  flutter_secure_storage: ^10.3.1
 
 
 dev_dependencies:

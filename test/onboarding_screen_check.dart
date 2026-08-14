@@ -65,17 +65,31 @@ void main() {
     expect(finished, isTrue);
   });
 
-  testWidgets('마지막 페이지에서 카카오 버튼을 누르면 onFinished가 호출된다', (tester) async {
-    var finished = false;
-    await pumpScreen(tester, onFinished: () => finished = true);
+  testWidgets(
+    '카카오 버튼을 누르면 로그인 화면으로 이동한다 (.env 미설정 시 안내 문구, 크래시 없음)',
+    (tester) async {
+      var finished = false;
+      await pumpScreen(tester, onFinished: () => finished = true);
 
-    for (var i = 0; i < 4; i++) {
-      await tester.tap(find.text('다음'));
+      for (var i = 0; i < 4; i++) {
+        await tester.tap(find.text('다음'));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text('카카오로 시작하기'));
       await tester.pumpAndSettle();
-    }
-    await tester.tap(find.text('카카오로 시작하기'));
-    await tester.pumpAndSettle();
 
-    expect(finished, isTrue);
-  });
+      // 로그인이 실제로 끝난 게 아니므로 아직 온보딩을 벗어나면 안 된다
+      expect(finished, isFalse);
+      // 테스트 환경에는 .env가 로드되지 않으므로 설정 안내 화면이 보여야 한다
+      // (webview_flutter는 플랫폼 채널이 없어 실제로 띄울 수 없음 — 여기서 막히는 게 정상)
+      expect(find.text('카카오 로그인'), findsOne);
+      expect(tester.takeException(), isNull);
+
+      // 닫기를 누르면 아무 부작용 없이 온보딩으로 돌아온다
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      expect(finished, isFalse);
+      expect(find.text('카카오로 시작하기'), findsOne);
+    },
+  );
 }
