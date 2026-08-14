@@ -125,18 +125,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // 배경(히어로 이미지)만 스와이프로 움직인다
           PageView.builder(
             controller: _controller,
             itemCount: _kSlides.length,
             onPageChanged: (i) => setState(() => _page = i),
-            itemBuilder: (_, i) => _OnboardingPage(
-              slide: _kSlides[i],
-              pageIndex: i,
-              pageCount: _kSlides.length,
-              onNext: _goNext,
-              onKakaoLogin: _startKakaoLogin,
-              isLoggingIn: _isLoggingIn,
-            ),
+            itemBuilder: (_, i) => _OnboardingBackground(slide: _kSlides[i]),
+          ),
+          // 텍스트 · 인디케이터 · 버튼은 스와이프와 무관하게 한 자리에 고정된다
+          _OnboardingOverlay(
+            slide: _kSlides[_page],
+            pageIndex: _page,
+            pageCount: _kSlides.length,
+            onNext: _goNext,
+            onKakaoLogin: _startKakaoLogin,
+            isLoggingIn: _isLoggingIn,
           ),
           // 마지막 페이지는 카카오 버튼이 곧 액션이라 건너뛰기를 두지 않는다
           if (!_kSlides[_page].isFinal)
@@ -166,23 +169,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-// ── 슬라이드 한 장 ────────────────────────────────────────────
-class _OnboardingPage extends StatelessWidget {
+// ── 배경(히어로 이미지 + 페이드) ─────────────────────────────────
+// PageView 안에 이것만 들어가서, 스와이프하면 이 배경만 움직인다.
+class _OnboardingBackground extends StatelessWidget {
   final _OnboardingSlide slide;
-  final int pageIndex;
-  final int pageCount;
-  final VoidCallback onNext;
-  final VoidCallback onKakaoLogin;
-  final bool isLoggingIn;
 
-  const _OnboardingPage({
-    required this.slide,
-    required this.pageIndex,
-    required this.pageCount,
-    required this.onNext,
-    required this.onKakaoLogin,
-    required this.isLoggingIn,
-  });
+  const _OnboardingBackground({required this.slide});
 
   @override
   Widget build(BuildContext context) {
@@ -205,59 +197,84 @@ class _OnboardingPage extends StatelessWidget {
           height: slide.isFinal ? 260 : 200,
           child: const _BottomFade(),
         ),
-        SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 64),
-                Text(
-                  slide.title,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.notoSansKr(
-                    fontSize: slide.titleFontSize,
-                    height: 1.18,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF001635),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  slide.subtitle,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.notoSansKr(
-                    fontSize: 15,
-                    height: 1.2,
-                    fontWeight: FontWeight.w400,
-                    color: const Color(0xFF3F6DA8),
-                  ),
-                ),
-                const Spacer(),
-                if (!slide.isFinal) ...[
-                  _DotsIndicator(activeIndex: pageIndex, count: pageCount),
-                  const SizedBox(height: 16),
-                  _NextButton(onTap: onNext),
-                ] else ...[
-                  _KakaoButton(onTap: onKakaoLogin, isLoading: isLoggingIn),
-                  const SizedBox(height: 8),
-                  Text(
-                    '가입 시 이용약관 및 개인정보 처리방침에 동의합니다',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.notoSansKr(
-                      fontSize: 12,
-                      height: 1.17,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xFF7C93B5),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 28),
-              ],
-            ),
-          ),
-        ),
       ],
+    );
+  }
+}
+
+// ── 고정 오버레이(텍스트 · 인디케이터 · 버튼) ─────────────────────
+// PageView 밖의 Stack에 고정으로 얹혀서 스와이프에 반응하지 않고,
+// 현재 페이지 내용만 그대로 갱신된다.
+class _OnboardingOverlay extends StatelessWidget {
+  final _OnboardingSlide slide;
+  final int pageIndex;
+  final int pageCount;
+  final VoidCallback onNext;
+  final VoidCallback onKakaoLogin;
+  final bool isLoggingIn;
+
+  const _OnboardingOverlay({
+    required this.slide,
+    required this.pageIndex,
+    required this.pageCount,
+    required this.onNext,
+    required this.onKakaoLogin,
+    required this.isLoggingIn,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 64),
+            Text(
+              slide.title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.notoSansKr(
+                fontSize: slide.titleFontSize,
+                height: 1.18,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF001635),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              slide.subtitle,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.notoSansKr(
+                fontSize: 15,
+                height: 1.2,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFF3F6DA8),
+              ),
+            ),
+            const Spacer(),
+            if (!slide.isFinal) ...[
+              _DotsIndicator(activeIndex: pageIndex, count: pageCount),
+              const SizedBox(height: 16),
+              _NextButton(onTap: onNext),
+            ] else ...[
+              _KakaoButton(onTap: onKakaoLogin, isLoading: isLoggingIn),
+              const SizedBox(height: 8),
+              Text(
+                '가입 시 이용약관 및 개인정보 처리방침에 동의합니다',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.notoSansKr(
+                  fontSize: 12,
+                  height: 1.17,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xFF7C93B5),
+                ),
+              ),
+            ],
+            const SizedBox(height: 28),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -273,11 +290,13 @@ class _TopFade extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
+          // Colors.transparent(검정+alpha0)로 페이드하면 중간에 회색/어두운 띠가
+          // 생긴다 — alpha만 0으로 가는 흰색(0x00FFFFFF)으로 페이드해야 깨끗하다.
           colors: [
             Colors.white,
             Colors.white,
             Color(0xB3FFFFFF),
-            Colors.transparent,
+            Color(0x00FFFFFF),
           ],
           stops: [0, 0.3, 0.42, 0.58],
         ),
@@ -296,7 +315,7 @@ class _BottomFade extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.transparent, Colors.white, Colors.white],
+          colors: [Color(0x00FFFFFF), Colors.white, Colors.white],
           stops: [0, 0.7, 1],
         ),
       ),
