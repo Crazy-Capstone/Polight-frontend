@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/services/auth_service.dart';
+import 'kakao_login_webview.dart';
 
 // ── 데이터 모델 ───────────────────────────────────────────────
 class _OnboardingSlide {
@@ -66,7 +68,9 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _controller = PageController();
+  final _authService = AuthService();
   int _page = 0;
+  bool _isLoggingIn = false;
 
   @override
   void dispose() {
@@ -85,6 +89,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
+  Future<void> _startKakaoLogin() async {
+    if (_isLoggingIn) return;
+    setState(() => _isLoggingIn = true);
+
+    try {
+      final code = await Navigator.of(context).push<String?>(
+        MaterialPageRoute(builder: (_) => const KakaoLoginWebView()),
+      );
+      if (code == null) return; // 사용자가 취소했거나 동의를 거부함
+
+      await _authService.loginWithKakao(code);
+      widget.onFinished?.call();
+    } on KakaoConfigException catch (e) {
+      _showError(e.message);
+    } on AuthException catch (e) {
+      _showError(e.message);
+    } catch (_) {
+      _showError('카카오 로그인 중 문제가 발생했어요. 다시 시도해 주세요.');
+    } finally {
+      if (mounted) setState(() => _isLoggingIn = false);
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,6 +134,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               pageIndex: i,
               pageCount: _kSlides.length,
               onNext: _goNext,
+              onKakaoLogin: _startKakaoLogin,
+              isLoggingIn: _isLoggingIn,
             ),
           ),
           // 마지막 페이지는 카카오 버튼이 곧 액션이라 건너뛰기를 두지 않는다
@@ -136,12 +172,16 @@ class _OnboardingPage extends StatelessWidget {
   final int pageIndex;
   final int pageCount;
   final VoidCallback onNext;
+  final VoidCallback onKakaoLogin;
+  final bool isLoggingIn;
 
   const _OnboardingPage({
     required this.slide,
     required this.pageIndex,
     required this.pageCount,
     required this.onNext,
+    required this.onKakaoLogin,
+    required this.isLoggingIn,
   });
 
   @override
@@ -199,7 +239,7 @@ class _OnboardingPage extends StatelessWidget {
                   const SizedBox(height: 16),
                   _NextButton(onTap: onNext),
                 ] else ...[
-                  _KakaoButton(onTap: onNext),
+                  _KakaoButton(onTap: onKakaoLogin, isLoading: isLoggingIn),
                   const SizedBox(height: 8),
                   Text(
                     '가입 시 이용약관 및 개인정보 처리방침에 동의합니다',
@@ -262,6 +302,7 @@ class _BottomFade extends StatelessWidget {
       ),
     );
   }
+
 }
 
 // ── 페이지 인디케이터 ─────────────────────────────────────────
@@ -331,13 +372,14 @@ class _NextButton extends StatelessWidget {
 // ── 카카오로 시작하기 버튼 ─────────────────────────────────────
 class _KakaoButton extends StatelessWidget {
   final VoidCallback onTap;
+  final bool isLoading;
 
-  const _KakaoButton({required this.onTap});
+  const _KakaoButton({required this.onTap, required this.isLoading});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       child: Container(
         width: double.infinity,
         height: 56,
@@ -345,26 +387,37 @@ class _KakaoButton extends StatelessWidget {
           color: const Color(0xFFFEE500),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              'assets/images/onboarding_kakao_icon.svg',
-              width: 19.14,
-              height: 17.85,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '카카오로 시작하기',
-              style: GoogleFonts.notoSansKr(
-                fontSize: 17,
-                height: 1.18,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF181600),
+        child: isLoading
+            ? const Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    color: Color(0xFF181600),
+                  ),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/images/onboarding_kakao_icon.svg',
+                    width: 19.14,
+                    height: 17.85,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '카카오로 시작하기',
+                    style: GoogleFonts.notoSansKr(
+                      fontSize: 17,
+                      height: 1.18,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF181600),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
