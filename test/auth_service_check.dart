@@ -18,6 +18,9 @@ class _UnusedTokenStorage implements TokenStorage {
   Future<String?> readValid() async => null;
 
   @override
+  Future<UserProfile> readProfile() async => UserProfile.empty;
+
+  @override
   Future<void> clear() async {}
 }
 
@@ -31,6 +34,21 @@ void main() {
 
       expect(token.accessToken, 'eyJhbGciOiJIUzI1NiJ9...');
       expect(token.expiresInSeconds, 3600);
+      // 백엔드가 아직 안 내려주는 필드라 지금은 null이어야 한다
+      expect(token.nickname, isNull);
+      expect(token.profileImageUrl, isNull);
+    });
+
+    test('백엔드가 nickname/profileImageUrl을 추가로 내려주면 그대로 읽는다', () {
+      final token = AuthToken.fromJson({
+        'accessToken': 'eyJhbGciOiJIUzI1NiJ9...',
+        'expiresInSeconds': 3600,
+        'nickname': '류지',
+        'profileImageUrl': 'https://k.kakaocdn.net/dn/profile.jpg',
+      });
+
+      expect(token.nickname, '류지');
+      expect(token.profileImageUrl, 'https://k.kakaocdn.net/dn/profile.jpg');
     });
   });
 

@@ -5,6 +5,7 @@ import '../core/models/chat_message.dart';
 import '../core/models/place_category.dart';
 import '../core/models/place_result.dart';
 import '../core/services/place_service.dart';
+import '../core/services/token_storage.dart';
 import '../widgets/place_card.dart';
 
 class ChatbotScreen extends StatefulWidget {
@@ -36,9 +37,24 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   @override
   void initState() {
     super.initState();
-    _messages.add(
-      ChatMessage.bot('안녕하세요, 류지님! ⭐\n일본 여행 중이시군요.\n무엇을 도와드릴까요?'),
-    );
+    _messages.add(ChatMessage.bot(_greeting('회원')));
+    _loadNickname();
+  }
+
+  String _greeting(String name) =>
+      '안녕하세요, $name님! ⭐\n일본 여행 중이시군요.\n무엇을 도와드릴까요?';
+
+  Future<void> _loadNickname() async {
+    try {
+      final profile = await TokenStorage().readProfile();
+      if (mounted && profile.nickname != null && _messages.isNotEmpty) {
+        setState(() {
+          _messages[0] = ChatMessage.bot(_greeting(profile.nickname!));
+        });
+      }
+    } catch (_) {
+      // 저장된 닉네임이 없거나 조회에 실패하면 기본 인사말을 그대로 쓴다
+    }
   }
 
   @override

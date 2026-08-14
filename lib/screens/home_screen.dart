@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import '../core/services/token_storage.dart';
 import 'upload_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,11 +15,24 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _locationText = '위치 불러오는 중...';
   bool _isLoadingLocation = true;
+  String? _nickname;
 
   @override
   void initState() {
     super.initState();
     _fetchLocation();
+    _loadNickname();
+  }
+
+  Future<void> _loadNickname() async {
+    try {
+      final profile = await TokenStorage().readProfile();
+      if (mounted && profile.nickname != null) {
+        setState(() => _nickname = profile.nickname);
+      }
+    } catch (_) {
+      // 저장된 닉네임이 없거나 조회에 실패하면 기본 인사말을 그대로 쓴다
+    }
   }
 
   Future<void> _fetchLocation() async {
@@ -82,10 +96,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getGreeting() {
+    final name = _nickname ?? '회원';
     final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) return '좋은 아침이에요, 류지님 👋';
-    if (hour >= 12 && hour < 18) return '좋은 오후예요, 류지님 👋';
-    return '좋은 밤이에요, 류지님 👋';
+    if (hour >= 5 && hour < 12) return '좋은 아침이에요, $name님 👋';
+    if (hour >= 12 && hour < 18) return '좋은 오후예요, $name님 👋';
+    return '좋은 밤이에요, $name님 👋';
   }
 
   @override

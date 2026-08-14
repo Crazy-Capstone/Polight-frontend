@@ -1,8 +1,32 @@
 import 'package:flutter/material.dart';
 import 'insurance_history_screen.dart';
+import '../core/services/token_storage.dart';
 
-class MypageScreen extends StatelessWidget {
+class MypageScreen extends StatefulWidget {
   const MypageScreen({super.key});
+
+  @override
+  State<MypageScreen> createState() => _MypageScreenState();
+}
+
+class _MypageScreenState extends State<MypageScreen> {
+  UserProfile _profile = UserProfile.empty;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    // 보안 저장소 조회가 실패해도(플랫폼 문제 등) 화면은 기본값으로 정상 표시한다.
+    try {
+      final profile = await TokenStorage().readProfile();
+      if (mounted) setState(() => _profile = profile);
+    } catch (_) {
+      // UserProfile.empty(초기값) 그대로 둔다
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,21 +89,11 @@ class MypageScreen extends StatelessWidget {
           // 프로필
           Row(
             children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD6E8FF),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Center(
-                  child: Text('🐰', style: TextStyle(fontSize: 33.28)),
-                ),
-              ),
+              _buildAvatar(),
               const SizedBox(width: 14),
-              const Text(
-                '류지 님',
-                style: TextStyle(
+              Text(
+                '${_profile.nickname ?? '회원'} 님',
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18.72,
                   fontWeight: FontWeight.w700,
@@ -129,6 +143,33 @@ class MypageScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  // 카카오 프로필 사진이 있으면 보여주고, 없거나 로드에 실패하면 기본 아이콘으로 대체한다.
+  Widget _buildAvatar() {
+    final imageUrl = _profile.profileImageUrl;
+    return Container(
+      width: 58,
+      height: 58,
+      decoration: BoxDecoration(
+        color: const Color(0xFFD6E8FF),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: imageUrl == null
+          ? const Center(
+              child: Text('🐰', style: TextStyle(fontSize: 33.28)),
+            )
+          : Image.network(
+              imageUrl,
+              width: 58,
+              height: 58,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Center(
+                child: Text('🐰', style: TextStyle(fontSize: 33.28)),
+              ),
+            ),
     );
   }
 
