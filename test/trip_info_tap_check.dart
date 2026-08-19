@@ -1,4 +1,5 @@
 // 임시 검증용 테스트 (날짜 선택 규칙 확인 후 삭제).
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:polight_frontend/screens/trip_info_screen.dart';
@@ -10,7 +11,9 @@ void main() {
     tester.view.physicalSize = const Size(420, 1400);
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const MaterialApp(home: TripInfoScreen()));
+    await tester.pumpWidget(MaterialApp(
+      home: TripInfoScreen(file: PlatformFile(name: 'test.pdf', size: 0)),
+    ));
     await tester.pumpAndSettle();
   }
 

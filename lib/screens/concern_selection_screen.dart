@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/models/trip_session.dart';
 
 class ConcernSelectionScreen extends StatefulWidget {
-  const ConcernSelectionScreen({super.key});
+  /// 이전 단계에서 생성된 여행 세션. 걱정 선택 결과를 저장할 때 함께 쓰인다.
+  final TripSession trip;
+
+  const ConcernSelectionScreen({super.key, required this.trip});
 
   @override
   State<ConcernSelectionScreen> createState() => _ConcernSelectionScreenState();

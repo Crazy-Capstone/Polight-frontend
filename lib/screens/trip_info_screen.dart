@@ -1,10 +1,15 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/services/trip_service.dart';
 import 'concern_selection_screen.dart';
 
 /// 증권 업로드(1단계)와 걱정 선택(3단계) 사이의 여행 정보 입력 화면.
 class TripInfoScreen extends StatefulWidget {
-  const TripInfoScreen({super.key});
+  /// 1단계에서 선택한 보험 증권 PDF. 여행 세션 생성 요청에 함께 실려 간다.
+  final PlatformFile file;
+
+  const TripInfoScreen({super.key, required this.file});
 
   @override
   State<TripInfoScreen> createState() => _TripInfoScreenState();
@@ -20,10 +25,12 @@ class _TripInfoScreenState extends State<TripInfoScreen> {
   static const List<String> _weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
 
   final TextEditingController _nameController = TextEditingController();
+  final TripService _tripService = TripService();
 
   DateTime? _startDate;
   DateTime? _endDate;
   late DateTime _focusedMonth;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -53,6 +60,7 @@ class _TripInfoScreenState extends State<TripInfoScreen> {
   bool get _canProceed =>
       _isRangeComplete &&
       !_isOverMaxDays &&
+      !_isSubmitting &&
       _nameController.text.trim().isNotEmpty;
 
   int get _nights =>
@@ -97,6 +105,39 @@ class _TripInfoScreenState extends State<TripInfoScreen> {
     setState(() {
       _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + delta);
     });
+  }
+
+  Future<void> _submit() async {
+    setState(() => _isSubmitting = true);
+
+    try {
+      final trip = await _tripService.createTrip(
+        name: _nameController.text.trim(),
+        startDate: _startDate!,
+        endDate: _endDate!,
+        file: widget.file,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ConcernSelectionScreen(trip: trip),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e is TripException ? e.message : '여행 정보를 저장하는 중 오류가 발생했어요',
+            style: GoogleFonts.notoSansKr(),
+          ),
+          backgroundColor: const Color(0xFF001635),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -684,13 +725,7 @@ class _TripInfoScreenState extends State<TripInfoScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: _canProceed
-                    ? () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const ConcernSelectionScreen(),
-                          ),
-                        )
-                    : null,
+                onPressed: _canProceed ? _submit : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0066C3),
                   foregroundColor: Colors.white,
@@ -701,13 +736,22 @@ class _TripInfoScreenState extends State<TripInfoScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: Text(
-                  '다음',
-                  style: GoogleFonts.notoSansKr(
-                    fontSize: 15.6,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        '다음',
+                        style: GoogleFonts.notoSansKr(
+                          fontSize: 15.6,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
               ),
             ),
           ),
