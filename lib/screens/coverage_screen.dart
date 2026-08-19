@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'coverage_detail_screen.dart';
+import '../core/services/trip_service.dart';
 import '../widgets/trip_select_sheet.dart';
 
 void main() {
@@ -59,10 +60,45 @@ class CoverageScreen extends StatefulWidget {
 }
 
 class _CoverageScreenState extends State<CoverageScreen> {
-  late Trip _selectedTrip = widget.initialTrip ?? kTrips.first;
+  final TripService _tripService = TripService();
+
+  Trip? _selectedTrip;
+  String? _tripLoadError;
+
+  @override
+  void initState() {
+    super.initState();
+    final initialTrip = widget.initialTrip;
+    if (initialTrip != null) {
+      _selectedTrip = initialTrip;
+    } else {
+      _loadInitialTrip();
+    }
+  }
+
+  Future<void> _loadInitialTrip() async {
+    try {
+      final sessions = await _tripService.listTrips();
+      if (!mounted) return;
+      setState(() {
+        if (sessions.isEmpty) {
+          _tripLoadError = '등록된 여행이 없어요';
+        } else {
+          _selectedTrip = Trip.fromSession(sessions.first);
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _tripLoadError = e is TripException ? e.message : '여행 정보를 불러오지 못했어요';
+      });
+    }
+  }
 
   Future<void> _openTripSelect() async {
-    final picked = await showTripSelectSheet(context, selected: _selectedTrip);
+    final current = _selectedTrip;
+    if (current == null) return;
+    final picked = await showTripSelectSheet(context, selected: current);
     if (picked != null) setState(() => _selectedTrip = picked);
   }
 
@@ -178,6 +214,27 @@ class _CoverageScreenState extends State<CoverageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final selectedTrip = _selectedTrip;
+    if (selectedTrip == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFF),
+        body: SafeArea(
+          child: Center(
+            child: _tripLoadError != null
+                ? Text(
+                    _tripLoadError!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF5B7BA6),
+                    ),
+                  )
+                : const CircularProgressIndicator(color: Color(0xFF0888F6)),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFF),
       body: SafeArea(
@@ -215,7 +272,7 @@ class _CoverageScreenState extends State<CoverageScreen> {
                     ),
                     const SizedBox(width: 12),
                     _TripBadge(
-                      trip: _selectedTrip,
+                      trip: selectedTrip,
                       onTap: _openTripSelect,
                     ),
                   ],
@@ -235,7 +292,7 @@ class _CoverageScreenState extends State<CoverageScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: _TripDateBanner(trip: _selectedTrip),
+                child: _TripDateBanner(trip: selectedTrip),
               ),
             ),
 

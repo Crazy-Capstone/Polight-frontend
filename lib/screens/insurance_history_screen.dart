@@ -1,33 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/models/trip_session.dart';
+import '../core/services/trip_service.dart';
 import '../widgets/trip_select_sheet.dart';
 import 'coverage_screen.dart';
 
 // ── 데이터 모델 ───────────────────────────────────────────────
-class PastInsuranceItem {
-  final String tripTitle;
-  final String dateRange;
-  final String durationLabel;
-  final String insurer;
-  final String flag;
-  final int year;
+/// GET /api/v1/trips 응답 한 건을 화면에 쓸 형태로 감싼다.
+class _HistoryEntry {
+  final TripSession session;
+  final Trip trip;
 
-  const PastInsuranceItem({
-    required this.tripTitle,
-    required this.dateRange,
-    required this.durationLabel,
-    required this.insurer,
-    required this.flag,
-    required this.year,
-  });
+  _HistoryEntry(this.session) : trip = Trip.fromSession(session);
 
-  /// 보장 내역 화면에 넘길 여행 정보.
-  /// 진행 중인 여행으로 등록돼 있으면 그 정보를 그대로 쓴다
-  /// (보장 내역 탭과 상태 표시가 어긋나지 않도록).
-  Trip get asTrip => kTrips.firstWhere(
-        (trip) => trip.name == tripTitle,
-        orElse: () => Trip(name: tripTitle, dateRange: dateRange, flag: flag),
-      );
+  String get durationLabel =>
+      '${session.endDate.difference(session.startDate).inDays + 1}일';
+
+  int get year => session.startDate.year;
 }
 
 // ── 화면 ─────────────────────────────────────────────────────
@@ -39,71 +28,54 @@ class InsuranceHistoryScreen extends StatefulWidget {
 }
 
 class _InsuranceHistoryScreenState extends State<InsuranceHistoryScreen> {
-  // 최근순 정렬
-  static const List<PastInsuranceItem> _items = [
-    PastInsuranceItem(
-      tripTitle: '일본 여행',
-      dateRange: '2025.04.08 – 04.18',
-      durationLabel: '10일',
-      insurer: '한화생명',
-      flag: '🇯🇵',
-      year: 2025,
-    ),
-    PastInsuranceItem(
-      tripTitle: '베트남 다낭 가족여행',
-      dateRange: '2025.01.11 – 01.17',
-      durationLabel: '6일',
-      insurer: '삼성화재',
-      flag: '🇻🇳',
-      year: 2025,
-    ),
-    PastInsuranceItem(
-      tripTitle: '파리 출장',
-      dateRange: '2024.11.03 – 11.09',
-      durationLabel: '6일',
-      insurer: 'KB손해보험',
-      flag: '🇫🇷',
-      year: 2024,
-    ),
-    PastInsuranceItem(
-      tripTitle: '태국 방콕 혼자 여행',
-      dateRange: '2024.08.20 – 08.27',
-      durationLabel: '7일',
-      insurer: '현대해상',
-      flag: '🇹🇭',
-      year: 2024,
-    ),
-    PastInsuranceItem(
-      tripTitle: '미국 서부 로드트립',
-      dateRange: '2024.05.02 – 05.14',
-      durationLabel: '12일',
-      insurer: '한화생명',
-      flag: '🇺🇸',
-      year: 2024,
-    ),
-    PastInsuranceItem(
-      tripTitle: '스페인 신혼여행',
-      dateRange: '2024.02.09 – 02.19',
-      durationLabel: '10일',
-      insurer: '삼성화재',
-      flag: '🇪🇸',
-      year: 2024,
-    ),
-  ];
+  final TripService _tripService = TripService();
 
-  static const List<String> _filters = ['전체', '2025', '2024', '2023'];
+  /// null이면 아직 로딩 중.
+  List<_HistoryEntry>? _entries;
+  String? _error;
+  String _selectedFilter = '전체';
 
-  String _selectedFilter = _filters.first;
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
 
-  List<PastInsuranceItem> get _visibleItems {
-    if (_selectedFilter == '전체') return _items;
-    return _items
-        .where((item) => item.year.toString() == _selectedFilter)
-        .toList();
+  Future<void> _loadHistory() async {
+    try {
+      final sessions = await _tripService.listTrips();
+      if (!mounted) return;
+
+      final entries = sessions.map(_HistoryEntry.new).where((e) => e.trip.isExpired).toList()
+        ..sort((a, b) => b.session.endDate.compareTo(a.session.endDate));
+
+      setState(() => _entries = entries);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e is TripException ? e.message : '보험 기록을 불러오지 못했어요';
+      });
+    }
+  }
+
+  List<String> get _filters {
+    final years = (_entries ?? const <_HistoryEntry>[])
+        .map((e) => e.year.toString())
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+    return ['전체', ...years];
+  }
+
+  List<_HistoryEntry> get _visibleItems {
+    final entries = _entries ?? const <_HistoryEntry>[];
+    if (_selectedFilter == '전체') return entries;
+    return entries.where((e) => e.year.toString() == _selectedFilter).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final entries = _entries;
     final items = _visibleItems;
 
     return Scaffold(
@@ -117,21 +89,27 @@ class _InsuranceHistoryScreenState extends State<InsuranceHistoryScreen> {
               children: [
                 _buildHeader(),
                 const SizedBox(height: 16),
-                _buildYearFilter(),
-                const SizedBox(height: 14),
-                _buildCountRow(items.length),
-                const SizedBox(height: 12),
-                if (items.isEmpty)
-                  _buildEmptyState()
-                else
-                  for (int i = 0; i < items.length; i++) ...[
-                    if (i > 0) const SizedBox(height: 10.5),
-                    _HistoryCard(
-                      item: items[i],
-                      // 최근 건을 파란 테두리로 강조
-                      isHighlighted: i == 0,
-                    ),
-                  ],
+                if (_error != null)
+                  _buildMessageState(_error!)
+                else if (entries == null)
+                  _buildLoadingState()
+                else ...[
+                  _buildYearFilter(),
+                  const SizedBox(height: 14),
+                  _buildCountRow(items.length),
+                  const SizedBox(height: 12),
+                  if (items.isEmpty)
+                    _buildMessageState('$_selectedFilter년 보험 기록이 없습니다')
+                  else
+                    for (int i = 0; i < items.length; i++) ...[
+                      if (i > 0) const SizedBox(height: 10.5),
+                      _HistoryCard(
+                        item: items[i],
+                        // 최근 건을 파란 테두리로 강조
+                        isHighlighted: i == 0,
+                      ),
+                    ],
+                ],
               ],
             ),
           ),
@@ -262,8 +240,18 @@ class _InsuranceHistoryScreenState extends State<InsuranceHistoryScreen> {
     );
   }
 
-  // ─── 빈 상태 (해당 연도 기록 없음) ────────────────────────────────────────
-  Widget _buildEmptyState() {
+  // ─── 로딩 중 ──────────────────────────────────────────────────────────────
+  Widget _buildLoadingState() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 32),
+      child: Center(
+        child: CircularProgressIndicator(color: Color(0xFF0868DD)),
+      ),
+    );
+  }
+
+  // ─── 빈 상태 · 에러 상태 (해당 연도 기록 없음 / 조회 실패) ─────────────────
+  Widget _buildMessageState(String message) {
     return Container(
       width: double.infinity,
       height: 84.36,
@@ -273,7 +261,8 @@ class _InsuranceHistoryScreenState extends State<InsuranceHistoryScreen> {
         borderRadius: BorderRadius.circular(18),
       ),
       child: Text(
-        '$_selectedFilter년 보험 기록이 없습니다',
+        message,
+        textAlign: TextAlign.center,
         style: GoogleFonts.notoSansKr(
           fontSize: 12.5,
           height: 1.27,
@@ -287,7 +276,7 @@ class _InsuranceHistoryScreenState extends State<InsuranceHistoryScreen> {
 
 // ── 보험 내역 카드 ────────────────────────────────────────────
 class _HistoryCard extends StatelessWidget {
-  final PastInsuranceItem item;
+  final _HistoryEntry item;
   final bool isHighlighted;
 
   const _HistoryCard({required this.item, required this.isHighlighted});
@@ -300,7 +289,7 @@ class _HistoryCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => CoverageScreen(initialTrip: item.asTrip),
+            builder: (_) => CoverageScreen(initialTrip: item.trip),
           ),
         );
       },
@@ -323,7 +312,7 @@ class _HistoryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.tripTitle,
+                      item.session.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.notoSansKr(
@@ -335,7 +324,7 @@ class _HistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3.7),
                     Text(
-                      '${item.dateRange} · ${item.durationLabel}',
+                      '${item.trip.dateRange} · ${item.durationLabel}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.notoSansKr(
@@ -347,7 +336,7 @@ class _HistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3.2),
                     Text(
-                      '${item.insurer} · 만료',
+                      '만료',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.notoSansKr(
