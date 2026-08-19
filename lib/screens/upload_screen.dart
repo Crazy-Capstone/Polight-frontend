@@ -489,7 +489,7 @@ class _UploadScreenState extends State<UploadScreen> {
           onPressed: _selectedFile != null
               ? () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const TripInfoScreen(),
+                      builder: (_) => TripInfoScreen(file: _selectedFile!),
                     ),
                   )
               : null,
