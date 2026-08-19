@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/models/trip_session.dart';
+import '../core/services/trip_service.dart';
 
 // ── 데이터 모델 ───────────────────────────────────────────────
 class Trip {
@@ -16,31 +18,40 @@ class Trip {
     this.isExpired = true,
     this.flag = '',
   });
+
+  /// GET /api/v1/trips 응답 항목을 화면에 쓸 형태로 변환한다.
+  /// 국기 이모지는 백엔드가 내려주지 않아 비워 둔다.
+  factory Trip.fromSession(TripSession session) {
+    return Trip(
+      name: session.name,
+      dateRange: _formatDateRange(session.startDate, session.endDate),
+      isExpired: _isBeforeToday(session.endDate),
+    );
+  }
 }
 
-// 여행 선택 목록. 진행 중인 여행이 맨 위에 온다.
-const List<Trip> kTrips = [
-  Trip(
-    name: '일본 여행',
-    dateRange: '2025.04.08 – 04.18',
-    isExpired: false,
-    flag: '🇯🇵',
-  ),
-  Trip(
-    name: '베트남 다낭 가족여행',
-    dateRange: '2025.01.11 – 01.17',
-    flag: '🇻🇳',
-  ),
-  Trip(name: '파리 출장', dateRange: '2024.11.03 – 11.09', flag: '🇫🇷'),
-  Trip(name: '태국 방콕 혼자 여행', dateRange: '2024.08.20 – 08.27', flag: '🇹🇭'),
-];
+String _pad2(int n) => n.toString().padLeft(2, '0');
+
+String _formatDateRange(DateTime start, DateTime end) {
+  final startText = '${start.year}.${_pad2(start.month)}.${_pad2(start.day)}';
+  final endText = start.year == end.year
+      ? '${_pad2(end.month)}.${_pad2(end.day)}'
+      : '${end.year}.${_pad2(end.month)}.${_pad2(end.day)}';
+  return '$startText – $endText';
+}
+
+bool _isBeforeToday(DateTime date) {
+  final today = DateTime.now();
+  final dateOnly = DateTime(date.year, date.month, date.day);
+  final todayOnly = DateTime(today.year, today.month, today.day);
+  return dateOnly.isBefore(todayOnly);
+}
 
 /// 여행 선택 바텀시트를 띄우고, 사용자가 '이 여행으로 보기'를 누르면
 /// 선택한 [Trip]을 돌려준다. 닫기·스크림 탭 시에는 null.
 Future<Trip?> showTripSelectSheet(
   BuildContext context, {
   required Trip selected,
-  List<Trip> trips = kTrips,
 }) {
   return showModalBottomSheet<Trip>(
     context: context,
@@ -48,20 +59,15 @@ Future<Trip?> showTripSelectSheet(
     backgroundColor: Colors.transparent,
     // 디자인 스크림: #001028 45%
     barrierColor: const Color(0x73001028),
-    builder: (_) => TripSelectSheet(selected: selected, trips: trips),
+    builder: (_) => TripSelectSheet(selected: selected),
   );
 }
 
 // ── 바텀시트 ──────────────────────────────────────────────────
 class TripSelectSheet extends StatefulWidget {
   final Trip selected;
-  final List<Trip> trips;
 
-  const TripSelectSheet({
-    super.key,
-    required this.selected,
-    required this.trips,
-  });
+  const TripSelectSheet({super.key, required this.selected});
 
   @override
   State<TripSelectSheet> createState() => _TripSelectSheetState();
@@ -71,7 +77,30 @@ class _TripSelectSheetState extends State<TripSelectSheet> {
   // 시트 높이 / 화면 높이 (디자인 493.49 / 856.23)
   static const double _heightFactor = 0.5764;
 
+  final TripService _tripService = TripService();
+
   late Trip _selected = widget.selected;
+  List<Trip>? _trips;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTrips();
+  }
+
+  Future<void> _loadTrips() async {
+    try {
+      final sessions = await _tripService.listTrips();
+      if (!mounted) return;
+      setState(() => _trips = sessions.map(Trip.fromSession).toList());
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e is TripException ? e.message : '여행 목록을 불러오지 못했어요';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,21 +131,7 @@ class _TripSelectSheetState extends State<TripSelectSheet> {
             _buildSubtitle(),
             const SizedBox(height: 16.3),
             // 목록 — 마지막 항목이 버튼 아래로 살짝 걸쳐 스크롤됨을 알린다
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: widget.trips.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8.4),
-                itemBuilder: (_, i) {
-                  final trip = widget.trips[i];
-                  return _TripRow(
-                    trip: trip,
-                    isSelected: trip.name == _selected.name,
-                    onTap: () => setState(() => _selected = trip),
-                  );
-                },
-              ),
-            ),
+            Expanded(child: _buildBody()),
             _buildConfirmButton(bottomInset),
           ],
         ),
@@ -172,6 +187,60 @@ class _TripSelectSheetState extends State<TripSelectSheet> {
           ),
         ),
       ),
+    );
+  }
+
+  // ─── 목록 본문 (로딩 · 에러 · 빈 상태 · 목록) ──────────────────────────────
+  Widget _buildBody() {
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            _error!,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.notoSansKr(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: const Color(0xFF5B7BA6),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final trips = _trips;
+    if (trips == null) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF0888F6)),
+      );
+    }
+
+    if (trips.isEmpty) {
+      return Center(
+        child: Text(
+          '등록된 여행이 없어요',
+          style: GoogleFonts.notoSansKr(
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+            color: const Color(0xFF8FA6C2),
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: trips.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 8.4),
+      itemBuilder: (_, i) {
+        final trip = trips[i];
+        return _TripRow(
+          trip: trip,
+          isSelected: trip.name == _selected.name,
+          onTap: () => setState(() => _selected = trip),
+        );
+      },
     );
   }
 

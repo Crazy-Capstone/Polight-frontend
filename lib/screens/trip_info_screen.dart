@@ -623,7 +623,7 @@ class _TripInfoScreenState extends State<TripInfoScreen> {
     }
 
     return InkResponse(
-      onTap: isPast ? null : () => _onDayTap(day),
+      onTap: () => _onDayTap(day),
       radius: 22,
       customBorder: const CircleBorder(),
       highlightColor: const Color(0x140066C3),

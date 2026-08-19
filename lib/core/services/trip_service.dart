@@ -104,6 +104,38 @@ class TripService {
     return TripSession.fromJson(tripJson);
   }
 
+  /// 내가 만든 여행 세션 목록을 최신순 그대로 받아온다.
+  Future<List<TripSession>> listTrips() async {
+    if (_baseUrl.isEmpty) {
+      throw const TripException(0, '.env에 API_BASE_URL이 설정되어 있지 않습니다.');
+    }
+
+    _log('여행 세션 목록 조회 요청 시작');
+
+    final headers = <String, String>{};
+    final accessToken = await _tokenStorage.readValid();
+    if (accessToken != null) {
+      headers['Authorization'] = 'Bearer $accessToken';
+    }
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/v1/trips'),
+      headers: headers,
+    );
+
+    _log('여행 세션 목록 조회 응답 statusCode=${response.statusCode}');
+
+    if (response.statusCode != 200) {
+      _log('여행 세션 목록 조회 실패 body=${response.body}');
+      throw TripException(response.statusCode, _errorMessage(response));
+    }
+
+    final list = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+    return list
+        .map((e) => TripSession.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   /// 백엔드가 `{"code": "...", "message": "..."}` 형태로 보내주는 에러 메시지를
   /// 최대한 그대로 보여주고, 형태가 다르면 상태 코드 기반 문구로 대체한다.
   String _errorMessage(http.Response response) {
