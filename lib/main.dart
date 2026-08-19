@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'core/services/token_storage.dart';
 import 'screens/home_screen.dart';
 import 'screens/coverage_screen.dart';
 import 'screens/chatbot_screen.dart';
@@ -30,7 +31,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// ── 앱을 켤 때마다 온보딩부터 보여준다 ────────────────────────
+// ── 로그인 상태에 따라 온보딩 또는 메인 화면으로 분기한다 ──────────
+// 이미 로그인돼 있으면(유효한 토큰이 있으면) 온보딩을 건너뛰고 바로 메인으로 진입한다.
 class _RootScreen extends StatefulWidget {
   const _RootScreen();
 
@@ -39,11 +41,34 @@ class _RootScreen extends StatefulWidget {
 }
 
 class _RootScreenState extends State<_RootScreen> {
-  bool _showOnboarding = true;
+  /// null이면 로그인 상태 확인 중.
+  bool? _showOnboarding;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginState();
+  }
+
+  Future<void> _checkLoginState() async {
+    final accessToken = await TokenStorage().readValid();
+    if (!mounted) return;
+    setState(() => _showOnboarding = accessToken == null);
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (_showOnboarding) {
+    final showOnboarding = _showOnboarding;
+    if (showOnboarding == null) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF0066C3)),
+        ),
+      );
+    }
+
+    if (showOnboarding) {
       return OnboardingScreen(
         onFinished: () => setState(() => _showOnboarding = false),
       );

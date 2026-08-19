@@ -89,6 +89,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
+  /// '건너뛰기'는 로그인 자체를 건너뛰지 않고, 카카오 로그인 버튼이 있는
+  /// 마지막 페이지로만 바로 이동시킨다.
+  void _skipToLogin() {
+    _controller.animateToPage(
+      _kSlides.length - 1,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
   Future<void> _startKakaoLogin() async {
     if (_isLoggingIn) return;
     setState(() => _isLoggingIn = true);
@@ -149,7 +159,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(0, 4, 24, 0),
                   child: GestureDetector(
-                    onTap: widget.onFinished,
+                    onTap: _skipToLogin,
                     child: Text(
                       '건너뛰기',
                       style: GoogleFonts.notoSansKr(
