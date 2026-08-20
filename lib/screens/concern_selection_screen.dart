@@ -1,20 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../core/models/trip_document.dart';
 import '../core/models/trip_session.dart';
+import '../core/services/trip_service.dart';
+import 'analysis_progress_screen.dart';
 
 class ConcernSelectionScreen extends StatefulWidget {
   /// 이전 단계에서 생성된 여행 세션. 걱정 선택 결과를 저장할 때 함께 쓰인다.
   final TripSession trip;
 
-  const ConcernSelectionScreen({super.key, required this.trip});
+  /// 업로드한 증권 문서. 분석 시작 API 호출에 documentId로 쓰인다.
+  final TripDocument document;
+
+  const ConcernSelectionScreen({
+    super.key,
+    required this.trip,
+    required this.document,
+  });
 
   @override
   State<ConcernSelectionScreen> createState() => _ConcernSelectionScreenState();
 }
 
 class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
+  final TripService _tripService = TripService();
+
   String _selectedCategory = '전체';
   final Set<String> _selectedConcerns = {};
+  bool _isSubmitting = false;
 
   static const List<String> _categories = ['전체', '건강·의료', '분실·도난', '항공·기타'];
 
@@ -22,27 +35,27 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
     _ConcernCategory(
       name: '건강·의료',
       items: [
-        _ConcernItem(emoji: '🏥', label: '다치거나 아플까 봐'),
-        _ConcernItem(emoji: '🤒', label: '질병에 걸릴까 봐'),
-        _ConcernItem(emoji: '🍱', label: '식중독에 걸릴까 봐'),
-        _ConcernItem(emoji: '🦠', label: '특정 전염병 걸릴까 봐'),
+        _ConcernItem(emoji: '🏥', label: '다치거나 아플까 봐', code: 'INJURY_OR_ILLNESS'),
+        _ConcernItem(emoji: '🤒', label: '질병에 걸릴까 봐', code: 'ILLNESS'),
+        _ConcernItem(emoji: '🍱', label: '식중독에 걸릴까 봐', code: 'FOOD_POISONING'),
+        _ConcernItem(emoji: '🦠', label: '특정 전염병 걸릴까 봐', code: 'INFECTIOUS_DISEASE'),
       ],
     ),
     _ConcernCategory(
       name: '분실·도난',
       items: [
-        _ConcernItem(emoji: '🧳', label: '짐이 분실·파손될까 봐'),
-        _ConcernItem(emoji: '🛂', label: '여권을 잃어버릴까 봐'),
-        _ConcernItem(emoji: '👜', label: '소매치기 당할까 봐'),
+        _ConcernItem(emoji: '🧳', label: '짐이 분실·파손될까 봐', code: 'BAGGAGE_DAMAGE'),
+        _ConcernItem(emoji: '🛂', label: '여권을 잃어버릴까 봐', code: 'PASSPORT_LOSS'),
+        _ConcernItem(emoji: '👜', label: '소매치기 당할까 봐', code: 'PICKPOCKET'),
       ],
     ),
     _ConcernCategory(
       name: '항공·기타',
       items: [
-        _ConcernItem(emoji: '✈️', label: '비행기 지연·결항될까 봐'),
-        _ConcernItem(emoji: '🚨', label: '여행을 중단해야 할까 봐'),
-        _ConcernItem(emoji: '⚖️', label: '남에게 피해줄까 봐'),
-        _ConcernItem(emoji: '🩺', label: '큰 사고로 후유증 남을까 봐'),
+        _ConcernItem(emoji: '✈️', label: '비행기 지연·결항될까 봐', code: 'FLIGHT_DELAY'),
+        _ConcernItem(emoji: '🚨', label: '여행을 중단해야 할까 봐', code: 'TRIP_INTERRUPTION'),
+        _ConcernItem(emoji: '⚖️', label: '남에게 피해줄까 봐', code: 'LIABILITY'),
+        _ConcernItem(emoji: '🩺', label: '큰 사고로 후유증 남을까 봐', code: 'AFTEREFFECTS'),
       ],
     ),
   ];
@@ -52,14 +65,49 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
     return _allCategories.where((c) => c.name == _selectedCategory).toList();
   }
 
-  void _toggleConcern(String label) {
+  void _toggleConcern(String code) {
     setState(() {
-      if (_selectedConcerns.contains(label)) {
-        _selectedConcerns.remove(label);
+      if (_selectedConcerns.contains(code)) {
+        _selectedConcerns.remove(code);
       } else {
-        _selectedConcerns.add(label);
+        _selectedConcerns.add(code);
       }
     });
+  }
+
+  Future<void> _startAnalysis() async {
+    setState(() => _isSubmitting = true);
+
+    try {
+      final analysis = await _tripService.startAnalysis(
+        tripId: widget.trip.id,
+        documentId: widget.document.id,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => AnalysisProgressScreen(
+            trip: widget.trip,
+            document: widget.document,
+            initialAnalysis: analysis,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e is TripException ? e.message : '보험 분석을 시작하는 중 오류가 발생했어요',
+            style: GoogleFonts.notoSansKr(),
+          ),
+          backgroundColor: const Color(0xFF001635),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -237,9 +285,9 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
   }
 
   Widget _buildConcernCard(_ConcernItem item) {
-    final isSelected = _selectedConcerns.contains(item.label);
+    final isSelected = _selectedConcerns.contains(item.code);
     return GestureDetector(
-      onTap: () => _toggleConcern(item.label),
+      onTap: () => _toggleConcern(item.code),
       child: Container(
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFEBF1FF) : Colors.white,
@@ -340,7 +388,7 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: _selectedConcerns.isNotEmpty ? () {} : null,
+                onPressed: _isSubmitting ? null : _startAnalysis,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0066C3),
                   foregroundColor: Colors.white,
@@ -351,13 +399,22 @@ class _ConcernSelectionScreenState extends State<ConcernSelectionScreen> {
                   ),
                   elevation: 0,
                 ),
-                child: Text(
-                  '다음',
-                  style: GoogleFonts.notoSansKr(
-                    fontSize: 15.6,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        '다음',
+                        style: GoogleFonts.notoSansKr(
+                          fontSize: 15.6,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -449,5 +506,13 @@ class _ConcernCategory {
 class _ConcernItem {
   final String emoji;
   final String label;
-  const _ConcernItem({required this.emoji, required this.label});
+
+  /// 백엔드 ConcernType enum 값 (예: INJURY_OR_ILLNESS).
+  final String code;
+
+  const _ConcernItem({
+    required this.emoji,
+    required this.label,
+    required this.code,
+  });
 }

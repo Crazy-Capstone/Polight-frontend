@@ -111,7 +111,7 @@ class _TripInfoScreenState extends State<TripInfoScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final trip = await _tripService.createTrip(
+      final result = await _tripService.createTrip(
         name: _nameController.text.trim(),
         startDate: _startDate!,
         endDate: _endDate!,
@@ -121,7 +121,10 @@ class _TripInfoScreenState extends State<TripInfoScreen> {
       if (!mounted) return;
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ConcernSelectionScreen(trip: trip),
+          builder: (_) => ConcernSelectionScreen(
+            trip: result.trip,
+            document: result.document,
+          ),
         ),
       );
     } catch (e) {
