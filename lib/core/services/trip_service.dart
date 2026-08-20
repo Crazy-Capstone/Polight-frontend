@@ -4,8 +4,18 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import '../models/trip_analysis.dart';
+import '../models/trip_document.dart';
 import '../models/trip_session.dart';
 import 'token_storage.dart';
+
+/// POST /api/v1/trips 응답 전체. trip.id와 document.id로 분석 시작 API를 호출한다.
+class TripCreationResult {
+  final TripSession trip;
+  final TripDocument document;
+
+  const TripCreationResult({required this.trip, required this.document});
+}
 
 /// 백엔드가 여행 세션 생성 요청을 거절했을 때(.env 미설정, 잘못된 파일 등) 던진다.
 class TripException implements Exception {
@@ -41,13 +51,15 @@ class TripService {
     return '$y-$m-$d';
   }
 
-  /// 여행 이름/기간과 보험 증권 PDF로 여행 세션을 만든다.
-  /// 약관은 이 요청에 포함되지 않고, 이후 별도의 문서 업로드 API로 올린다.
-  Future<TripSession> createTrip({
+  /// 여행 이름/기간과 보험 문서(PDF)로 여행 세션을 만든다.
+  /// documentKind를 생략하면 백엔드가 CERTIFICATE(증권)로 처리한다.
+  /// 응답의 trip.id와 document.id로 이어서 분석 시작 API를 호출한다.
+  Future<TripCreationResult> createTrip({
     required String name,
     required DateTime startDate,
     required DateTime endDate,
     required PlatformFile file,
+    String? documentKind,
   }) async {
     if (_baseUrl.isEmpty) {
       throw const TripException(0, '.env에 API_BASE_URL이 설정되어 있지 않습니다.');
@@ -69,6 +81,7 @@ class TripService {
             'name': name,
             'startDate': _formatDate(startDate),
             'endDate': _formatDate(endDate),
+            if (documentKind != null) 'documentKind': documentKind,
           }),
           contentType: MediaType('application', 'json'),
         ),
@@ -98,10 +111,85 @@ class TripService {
 
     final json =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-    // 응답이 {"trip": {...}, "document": {...}} 형태로 오므로 trip만 꺼내 쓴다.
     final tripJson = json['trip'] as Map<String, dynamic>;
-    _log('여행 세션 생성 성공 id=${tripJson['id']}');
-    return TripSession.fromJson(tripJson);
+    final documentJson = json['document'] as Map<String, dynamic>;
+    _log(
+      '여행 세션 생성 성공 tripId=${tripJson['id']} documentId=${documentJson['id']}',
+    );
+    return TripCreationResult(
+      trip: TripSession.fromJson(tripJson),
+      document: TripDocument.fromJson(documentJson),
+    );
+  }
+
+  /// 문서 분석을 시작한다. 증권은 업로드 시점에 자동으로 분석이 시작되므로,
+  /// 이 API는 DB에 없어 사용자가 새로 올린 약관의 분석을 시작할 때만 쓴다.
+  /// 이미 분석 중인 문서에 다시 호출하면 재분석 없이 기존 작업을 그대로 반환한다.
+  Future<TripAnalysis> startAnalysis({
+    required String tripId,
+    required String documentId,
+  }) async {
+    if (_baseUrl.isEmpty) {
+      throw const TripException(0, '.env에 API_BASE_URL이 설정되어 있지 않습니다.');
+    }
+
+    _log('문서 분석 시작 요청 tripId=$tripId documentId=$documentId');
+
+    final headers = <String, String>{};
+    final accessToken = await _tokenStorage.readValid();
+    if (accessToken != null) {
+      headers['Authorization'] = 'Bearer $accessToken';
+    }
+
+    final response = await http.post(
+      Uri.parse('$_baseUrl/api/v1/trips/$tripId/documents/$documentId/analysis'),
+      headers: headers,
+    );
+
+    _log('문서 분석 시작 응답 statusCode=${response.statusCode}');
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      _log('문서 분석 시작 실패 body=${response.body}');
+      throw TripException(response.statusCode, _errorMessage(response));
+    }
+
+    final json =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    return TripAnalysis.fromJson(json);
+  }
+
+  /// 문서 분석 상태와 결과를 조회한다. 분석 중에는 상태 확인을 위해 이 API로 폴링한다.
+  Future<TripAnalysis> getAnalysis({
+    required String tripId,
+    required String documentId,
+  }) async {
+    if (_baseUrl.isEmpty) {
+      throw const TripException(0, '.env에 API_BASE_URL이 설정되어 있지 않습니다.');
+    }
+
+    _log('문서 분석 상태 조회 요청 tripId=$tripId documentId=$documentId');
+
+    final headers = <String, String>{};
+    final accessToken = await _tokenStorage.readValid();
+    if (accessToken != null) {
+      headers['Authorization'] = 'Bearer $accessToken';
+    }
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/v1/trips/$tripId/documents/$documentId/analysis'),
+      headers: headers,
+    );
+
+    _log('문서 분석 상태 조회 응답 statusCode=${response.statusCode}');
+
+    if (response.statusCode != 200) {
+      _log('문서 분석 상태 조회 실패 body=${response.body}');
+      throw TripException(response.statusCode, _errorMessage(response));
+    }
+
+    final json =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    return TripAnalysis.fromJson(json);
   }
 
   /// 내가 만든 여행 세션 목록을 최신순 그대로 받아온다.
