@@ -27,7 +27,8 @@ String emojiForCoverage(Coverage coverage) {
 
 String limitLabelFor(Coverage coverage) {
   final label = coverage.limitLabel;
-  if (label != null && label.isNotEmpty) return label;
+  // 백엔드가 "1000000" 처럼 raw 숫자로 주는 경우가 있어 그대로 쓰지 않고 다듬는다.
+  if (label != null && label.isNotEmpty) return humanizeMoneyText(label);
 
   final amount = coverage.limitAmount;
   if (amount == null) return '한도 확인 필요';
@@ -37,6 +38,50 @@ String limitLabelFor(Coverage coverage) {
       currency == null || currency.isEmpty || currency == '원' || currency == 'KRW';
   if (!isWon) return '최대 ${withComma(amount.toInt())}$currency';
   return '최대 ${formatKoreanWon(amount)}';
+}
+
+/// 백엔드가 준 금액 문구를 만/억 단위로 다듬는다.
+///
+/// - `"1000000"`, `"1,000,000원"` → `"100만원"`
+/// - `"최대 100000000원"` → `"최대 1억원"`
+/// - `"한도 없음"`, `"3시간 이상"`처럼 금액이 아니거나 이미 만/억으로 쓰인 문구는 그대로 둔다.
+String humanizeMoneyText(String raw) {
+  final text = raw.trim();
+  if (text.isEmpty) return text;
+
+  // 문자열 전체가 금액 하나인 경우 (원 단위까지 붙여서 반환)
+  final whole = RegExp(r'^([\d,]+)\s*원?$').firstMatch(text);
+  if (whole != null) {
+    final value = int.tryParse(whole.group(1)!.replaceAll(',', ''));
+    if (value != null) return formatKoreanWon(value);
+  }
+
+  // 문장 속에 큰 숫자가 섞여 있는 경우. 숫자 부분만 만/억으로 바꾸고,
+  // 뒤에 '원'이 이미 붙어 있지 않으면 붙여 준다.
+  return text.replaceAllMapped(RegExp(r'\d[\d,]*'), (m) {
+    final digits = m[0]!.replaceAll(',', '');
+    final value = int.tryParse(digits);
+    if (value == null || value < 10000) return m[0]!;
+
+    final rest = text.substring(m.end).trimLeft();
+    final alreadyHasWon = rest.startsWith('원');
+    return alreadyHasWon ? _koreanUnits(value) : '${_koreanUnits(value)}원';
+  });
+}
+
+/// 만/억 단위 표기에서 '원'을 뺀 형태. 예) 100000000 → "1억", 5000000 → "500만".
+String _koreanUnits(int value) {
+  if (value >= 100000000) {
+    final eok = value ~/ 100000000;
+    final man = (value % 100000000) ~/ 10000;
+    return man == 0 ? '$eok억' : '$eok억 $man만';
+  }
+  if (value >= 10000) {
+    final man = value ~/ 10000;
+    final rest = value % 10000;
+    return rest == 0 ? '$man만' : '$man만 ${withComma(rest)}';
+  }
+  return withComma(value);
 }
 
 /// 원 단위 숫자를 만/억 단위 한국식 표기로 바꾼다. 예) 100000000 → "1억", 5000000 → "500만".

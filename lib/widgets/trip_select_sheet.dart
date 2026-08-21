@@ -77,6 +77,42 @@ DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
 DateTime _todayOnly() => _dateOnly(DateTime.now());
 
+/// 여행 상태 순위. 진행 중(0) → 예정(1) → 지난 여행(2).
+int _tripRank(TripSession s) {
+  final today = _todayOnly();
+  final start = _dateOnly(s.startDate);
+  final end = _dateOnly(s.endDate);
+  if (!start.isAfter(today) && !end.isBefore(today)) return 0;
+  if (start.isAfter(today)) return 1;
+  return 2;
+}
+
+/// 지금 보고 있어야 할 여행 순서로 정렬한다.
+/// 진행 중인 여행이 맨 위, 그다음 다가오는 여행(가까운 순), 마지막이 지난 여행(최근 순).
+List<TripSession> sortTripsByCurrentFirst(List<TripSession> sessions) {
+  final sorted = [...sessions];
+  sorted.sort((a, b) {
+    final rankDiff = _tripRank(a).compareTo(_tripRank(b));
+    if (rankDiff != 0) return rankDiff;
+
+    switch (_tripRank(a)) {
+      case 0: // 진행 중: 먼저 끝나는 여행부터
+        return a.endDate.compareTo(b.endDate);
+      case 1: // 예정: 곧 떠나는 여행부터
+        return a.startDate.compareTo(b.startDate);
+      default: // 지난 여행: 최근에 끝난 여행부터
+        return b.endDate.compareTo(a.endDate);
+    }
+  });
+  return sorted;
+}
+
+/// 화면 기본값으로 보여줄 여행 하나. 목록이 비어 있으면 null.
+TripSession? pickCurrentTrip(List<TripSession> sessions) {
+  if (sessions.isEmpty) return null;
+  return sortTripsByCurrentFirst(sessions).first;
+}
+
 String _pad2(int n) => n.toString().padLeft(2, '0');
 
 String _formatDateRange(DateTime start, DateTime end) {
@@ -140,7 +176,8 @@ class _TripSelectSheetState extends State<TripSelectSheet> {
     try {
       final sessions = await _tripService.listTrips();
       if (!mounted) return;
-      setState(() => _trips = sessions.map(Trip.fromSession).toList());
+      setState(() => _trips =
+          sortTripsByCurrentFirst(sessions).map(Trip.fromSession).toList());
     } catch (e) {
       if (!mounted) return;
       setState(() {

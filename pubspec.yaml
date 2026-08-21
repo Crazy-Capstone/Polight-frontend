@@ -51,6 +51,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  # 앱 아이콘/파비콘 생성용 (dart run flutter_launcher_icons)
+  flutter_launcher_icons: ^0.14.1
+
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -93,3 +96,17 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# 앱 아이콘 · 웹 파비콘 생성 설정.
+# 원본을 바꾼 뒤 `dart run flutter_launcher_icons` 로 다시 생성한다.
+flutter_launcher_icons:
+  image_path: "assets/images/polight-icon-k-plane-glasstext-1024.png"
+  android: true
+  ios: true
+  # iOS 아이콘은 투명도를 허용하지 않아 배경을 채워 넣는다
+  remove_alpha_ios: true
+  background_color_ios: "#2C90F7"
+  web:
+    generate: true
+    background_color: "#2C90F7"
+    theme_color: "#0066C3"
