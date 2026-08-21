@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'coverage_detail_screen.dart';
+import '../core/coverage_display.dart';
 import '../core/models/coverage_result.dart' as api;
 import '../core/models/trip_document.dart';
 import '../core/models/trip_session.dart';
@@ -301,26 +302,31 @@ class _CoverageScreenState extends State<CoverageScreen> {
     }
 
     final items = result.coverages.map(_coverageItemFrom).toList();
-    return SliverGrid(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) => _CoverageCard(item: items[index]),
-        childCount: items.length,
-      ),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        mainAxisExtent: 150,
+    final leftColumn = <CoverageItem>[];
+    final rightColumn = <CoverageItem>[];
+    for (var i = 0; i < items.length; i++) {
+      (i.isEven ? leftColumn : rightColumn).add(items[i]);
+    }
+
+    // 카드 높이를 고정하지 않고 내용에 맞춰 늘어나도록, 2개의 열로 나눠 쌓는다.
+    return SliverToBoxAdapter(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: _CoverageColumn(items: leftColumn)),
+          const SizedBox(width: 12),
+          Expanded(child: _CoverageColumn(items: rightColumn)),
+        ],
       ),
     );
   }
 
   CoverageItem _coverageItemFrom(api.Coverage coverage) {
     return CoverageItem(
-      emoji: _emojiForCoverage(coverage),
+      emoji: emojiForCoverage(coverage),
       title: coverage.title,
       subtitle: coverage.subtitle ?? coverage.category ?? '',
-      limitLabel: _limitLabelFor(coverage),
+      limitLabel: limitLabelFor(coverage),
       isCovered: coverage.isCovered,
       insurer: '분석된 보험 증권',
       summaryItems: _summaryItemsFor(coverage),
@@ -328,55 +334,23 @@ class _CoverageScreenState extends State<CoverageScreen> {
     );
   }
 
-  String _emojiForCoverage(api.Coverage coverage) {
-    final text = '${coverage.category ?? ''} ${coverage.title}';
-    if (text.contains('치과')) return '🦷';
-    if (text.contains('의료') || text.contains('질병') || text.contains('상해')) {
-      return '🏥';
-    }
-    if (text.contains('항공') || text.contains('지연') || text.contains('결항')) {
-      return '✈️';
-    }
-    if (text.contains('수하물') ||
-        text.contains('휴대품') ||
-        text.contains('도난') ||
-        text.contains('분실')) {
-      return '🧳';
-    }
-    if (text.contains('이송') || text.contains('구급')) return '🚑';
-    if (text.contains('배상')) return '⚖️';
-    if (text.contains('여권')) return '🛂';
-    if (text.contains('중단') || text.contains('취소')) return '🚨';
-    return '🛡️';
-  }
-
-  String _limitLabelFor(api.Coverage coverage) {
-    final label = coverage.limitLabel;
-    if (label != null && label.isNotEmpty) return label;
-
-    final amount = coverage.limitAmount;
-    if (amount != null) {
-      final currency = coverage.limitCurrency ?? '원';
-      return '최대 ${_formatAmount(amount)}$currency';
-    }
-    return '한도 확인 필요';
-  }
-
-  String _formatAmount(num amount) {
-    final digits = amount.toInt().toString();
-    final buffer = StringBuffer();
-    for (var i = 0; i < digits.length; i++) {
-      if (i != 0 && (digits.length - i) % 3 == 0) buffer.write(',');
-      buffer.write(digits[i]);
-    }
-    return buffer.toString();
-  }
+  static final RegExp _rawNumberPattern = RegExp(r'^\d+$');
 
   List<SummaryItem> _summaryItemsFor(api.Coverage coverage) {
     return coverage.subLimits
         .take(3)
-        .map((s) => SummaryItem(label: s.label, value: s.value))
+        .map((s) => SummaryItem(label: s.label, value: _subLimitValue(s)))
         .toList();
+  }
+
+  /// value가 "3시간 이상"처럼 이미 문구면 그대로 두고, 순수 숫자("1000000")면
+  /// 만/억 단위로 바꿔 보여준다.
+  String _subLimitValue(api.CoverageSubLimit subLimit) {
+    final raw = subLimit.value.trim();
+    if (_rawNumberPattern.hasMatch(raw)) {
+      return formatKoreanWon(int.parse(raw));
+    }
+    return subLimit.value;
   }
 
   List<DetailItem> _detailItemsFor(api.Coverage coverage) {
@@ -562,6 +536,25 @@ class _TripDateBanner extends StatelessWidget {
   }
 }
 
+// ── 보장 카드 목록 한 열 (내용에 맞춰 늘어나는 메이슨리 레이아웃) ────
+class _CoverageColumn extends StatelessWidget {
+  final List<CoverageItem> items;
+
+  const _CoverageColumn({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i != 0) const SizedBox(height: 12),
+          _CoverageCard(item: items[i]),
+        ],
+      ],
+    );
+  }
+}
+
 // ── 보장 카드 ─────────────────────────────────────────────────
 class _CoverageCard extends StatelessWidget {
   final CoverageItem item;
@@ -594,12 +587,11 @@ class _CoverageCard extends StatelessWidget {
               ),
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // 아이콘 + 한도 뱃지
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
@@ -616,28 +608,37 @@ class _CoverageCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEBF1FF),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0xFFCEDDFE),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          item.limitLabel,
-                          style: const TextStyle(
-                            fontSize: 9.36,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF004D9D),
+                      const SizedBox(width: 8),
+                      // Spacer 없이 남는 공간을 뱃지가 전부 쓰게 해서 잘리지 않게 한다.
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEBF1FF),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFFCEDDFE),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              item.limitLabel,
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                fontSize: 9.36,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF004D9D),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
 
                   // 제목
                   Text(
@@ -650,20 +651,25 @@ class _CoverageCard extends StatelessWidget {
                   ),
 
                   // 부제목
-                  Text(
-                    item.subtitle,
-                    style: const TextStyle(
-                      fontSize: 11.44,
-                      color: Color(0xFF4A6080),
-                      fontWeight: FontWeight.w400,
+                  if (item.subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      item.subtitle,
+                      style: const TextStyle(
+                        fontSize: 11.44,
+                        color: Color(0xFF4A6080),
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
-                  ),
+                  ],
+                  const SizedBox(height: 10),
 
                   // 구분선
                   Container(
                     height: 1,
                     color: const Color(0xFFF0F4FF),
                   ),
+                  const SizedBox(height: 10),
 
                   // 하단 보장 상태 + 상세보기
                   Row(

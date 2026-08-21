@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import '../core/coverage_display.dart';
+import '../core/models/coverage_result.dart';
 import '../core/services/token_storage.dart';
+import '../core/services/trip_service.dart';
 import 'upload_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,15 +16,60 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final TripService _tripService = TripService();
+
   String _locationText = '위치 불러오는 중...';
   bool _isLoadingLocation = true;
   String? _nickname;
+
+  /// null이면 로딩 중, 빈 리스트면 분석된 보험이 없거나 조회에 실패한 상태.
+  List<Coverage>? _coverages;
+  String? _coverageError;
 
   @override
   void initState() {
     super.initState();
     _fetchLocation();
     _loadNickname();
+    _loadInsuranceSummary();
+  }
+
+  Future<void> _loadInsuranceSummary() async {
+    try {
+      final sessions = await _tripService.listTrips();
+      if (!mounted) return;
+      if (sessions.isEmpty) {
+        setState(() => _coverages = []);
+        return;
+      }
+
+      final tripId = sessions.first.id;
+      final documents = await _tripService.getDocuments(tripId: tripId);
+      if (documents.isEmpty) {
+        if (!mounted) return;
+        setState(() => _coverages = []);
+        return;
+      }
+
+      final document = documents.firstWhere(
+        (d) => d.documentKind == 'CERTIFICATE',
+        orElse: () => documents.first,
+      );
+      final result = await _tripService.getCoverages(
+        tripId: tripId,
+        documentId: document.id,
+      );
+      if (!mounted) return;
+      setState(() {
+        _coverages = result.status == 'COMPLETED' ? result.coverages : [];
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _coverages = [];
+        _coverageError = e is TripException ? e.message : '보험 현황을 불러오지 못했어요';
+      });
+    }
   }
 
   Future<void> _loadNickname() async {
@@ -415,16 +463,55 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFE5E7EB)),
           ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _InsuranceItem(emoji: '🏥', label: '의료비', amount: '최대 1억원'),
-              _InsuranceItem(emoji: '✈️', label: '항공 지연', amount: '최대 30만원'),
-              _InsuranceItem(emoji: '🧳', label: '수하물', amount: '최대 50만원'),
-              _InsuranceItem(emoji: '🚑', label: '긴급 이송', amount: '한도 없음'),
-            ],
+          child: _buildInsuranceSummaryContent(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInsuranceSummaryContent() {
+    final coverages = _coverages;
+    if (coverages == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Color(0xFF0888F6),
+            ),
           ),
         ),
+      );
+    }
+
+    if (coverages.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Center(
+          child: Text(
+            _coverageError ?? '아직 분석된 보험이 없어요',
+            style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 12.48),
+          ),
+        ),
+      );
+    }
+
+    final items = coverages.take(4).toList();
+    return Row(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i != 0) const SizedBox(width: 4),
+          Expanded(
+            child: _InsuranceItem(
+              emoji: emojiForCoverage(items[i]),
+              label: items[i].title,
+              amount: limitLabelFor(items[i]),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -510,6 +597,9 @@ class _InsuranceItem extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Color(0xFF111827),
             fontSize: 13.52,
@@ -519,6 +609,9 @@ class _InsuranceItem extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           amount,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: Color(0xFF6B7280), fontSize: 11.44),
         ),
       ],
