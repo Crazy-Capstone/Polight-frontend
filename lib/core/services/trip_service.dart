@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import '../models/coverage_result.dart';
 import '../models/trip_analysis.dart';
 import '../models/trip_document.dart';
 import '../models/trip_session.dart';
@@ -43,6 +44,11 @@ class TripService {
   static String get _baseUrl => _env('API_BASE_URL');
 
   void _log(String message) => developer.log(message, name: _logName);
+
+  /// 백엔드 응답에 담긴 필드를 빠짐없이 보기 위해 원본 JSON을 그대로 찍는다.
+  void _logBody(String label, dynamic json) {
+    _log('$label body=${const JsonEncoder.withIndent('  ').convert(json)}');
+  }
 
   static String _formatDate(DateTime date) {
     final y = date.year.toString().padLeft(4, '0');
@@ -111,11 +117,9 @@ class TripService {
 
     final json =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    _logBody('여행 세션 생성 성공', json);
     final tripJson = json['trip'] as Map<String, dynamic>;
     final documentJson = json['document'] as Map<String, dynamic>;
-    _log(
-      '여행 세션 생성 성공 tripId=${tripJson['id']} documentId=${documentJson['id']}',
-    );
     return TripCreationResult(
       trip: TripSession.fromJson(tripJson),
       document: TripDocument.fromJson(documentJson),
@@ -155,6 +159,7 @@ class TripService {
 
     final json =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    _logBody('문서 분석 시작 성공', json);
     return TripAnalysis.fromJson(json);
   }
 
@@ -189,7 +194,80 @@ class TripService {
 
     final json =
         jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    _logBody('문서 분석 상태 조회 성공', json);
     return TripAnalysis.fromJson(json);
+  }
+
+  /// 여행에 업로드된 문서 목록을 조회한다. 증권/약관 documentId를 몰라도
+  /// tripId만으로 여기서 찾을 수 있다.
+  Future<List<TripDocument>> getDocuments({required String tripId}) async {
+    if (_baseUrl.isEmpty) {
+      throw const TripException(0, '.env에 API_BASE_URL이 설정되어 있지 않습니다.');
+    }
+
+    _log('여행 문서 목록 조회 요청 tripId=$tripId');
+
+    final headers = <String, String>{};
+    final accessToken = await _tokenStorage.readValid();
+    if (accessToken != null) {
+      headers['Authorization'] = 'Bearer $accessToken';
+    }
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/api/v1/trips/$tripId/documents'),
+      headers: headers,
+    );
+
+    _log('여행 문서 목록 조회 응답 statusCode=${response.statusCode}');
+
+    if (response.statusCode != 200) {
+      _log('여행 문서 목록 조회 실패 body=${response.body}');
+      throw TripException(response.statusCode, _errorMessage(response));
+    }
+
+    final list = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+    _logBody('여행 문서 목록 조회 성공', list);
+    return list
+        .map((e) => TripDocument.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// 보장 내역을 조회한다. status가 COMPLETED가 아니면 coverages/selectedConcerns는
+  /// 빈 목록으로 온다.
+  Future<CoverageResult> getCoverages({
+    required String tripId,
+    required String documentId,
+  }) async {
+    if (_baseUrl.isEmpty) {
+      throw const TripException(0, '.env에 API_BASE_URL이 설정되어 있지 않습니다.');
+    }
+
+    _log('보장 내역 조회 요청 tripId=$tripId documentId=$documentId');
+
+    final headers = <String, String>{};
+    final accessToken = await _tokenStorage.readValid();
+    if (accessToken != null) {
+      headers['Authorization'] = 'Bearer $accessToken';
+    }
+
+    final response = await http.get(
+      Uri.parse(
+        '$_baseUrl/api/v1/trips/$tripId/documents/$documentId/analysis/coverages',
+      ),
+      headers: headers,
+    );
+
+    _log('보장 내역 조회 응답 statusCode=${response.statusCode}');
+
+    if (response.statusCode != 200) {
+      _log('보장 내역 조회 실패 body=${response.body}');
+      throw TripException(response.statusCode, _errorMessage(response));
+    }
+
+    final json =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    _logBody('보장 내역 조회 성공', json);
+    return CoverageResult.fromJson(json);
   }
 
   /// 내가 만든 여행 세션 목록을 최신순 그대로 받아온다.
@@ -219,6 +297,7 @@ class TripService {
     }
 
     final list = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+    _logBody('여행 세션 목록 조회 성공', list);
     return list
         .map((e) => TripSession.fromJson(e as Map<String, dynamic>))
         .toList();

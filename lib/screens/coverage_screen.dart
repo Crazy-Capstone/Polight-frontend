@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'coverage_detail_screen.dart';
+import '../core/models/coverage_result.dart' as api;
+import '../core/models/trip_document.dart';
+import '../core/models/trip_session.dart';
 import '../core/services/trip_service.dart';
 import '../widgets/trip_select_sheet.dart';
 
@@ -53,7 +56,16 @@ class CoverageScreen extends StatefulWidget {
   /// 이전 보험 내역 등에서 특정 여행의 보장을 바로 열 때 지정한다.
   final Trip? initialTrip;
 
-  const CoverageScreen({super.key, this.initialTrip});
+  /// 분석이 막 끝난 여행/문서. 둘 다 있으면 실제 보장 내역 API로 그린다.
+  final TripSession? trip;
+  final TripDocument? document;
+
+  const CoverageScreen({
+    super.key,
+    this.initialTrip,
+    this.trip,
+    this.document,
+  });
 
   @override
   State<CoverageScreen> createState() => _CoverageScreenState();
@@ -65,14 +77,65 @@ class _CoverageScreenState extends State<CoverageScreen> {
   Trip? _selectedTrip;
   String? _tripLoadError;
 
+  api.CoverageResult? _coverageResult;
+  bool _isLoadingCoverages = false;
+  String? _coverageError;
+
   @override
   void initState() {
     super.initState();
+
+    final trip = widget.trip;
     final initialTrip = widget.initialTrip;
-    if (initialTrip != null) {
+    if (trip != null) {
+      _selectedTrip = Trip.fromSession(trip);
+      _loadCoverages(tripId: trip.id);
+    } else if (initialTrip != null) {
       _selectedTrip = initialTrip;
+      _loadCoverages(tripId: initialTrip.id);
     } else {
       _loadInitialTrip();
+    }
+  }
+
+  /// tripId만으로 문서를 찾아 보장 내역을 불러온다. 분석이 막 끝난 직후라
+  /// documentId를 이미 알고 있으면(widget.document) 문서 목록 조회를 건너뛴다.
+  Future<void> _loadCoverages({required String tripId}) async {
+    setState(() {
+      _isLoadingCoverages = true;
+      _coverageError = null;
+      _coverageResult = null;
+    });
+
+    try {
+      TripDocument document;
+      if (widget.document != null && widget.trip?.id == tripId) {
+        document = widget.document!;
+      } else {
+        final documents = await _tripService.getDocuments(tripId: tripId);
+        if (documents.isEmpty) {
+          throw const TripException(0, '이 여행에 업로드된 문서가 없어요');
+        }
+        document = documents.firstWhere(
+          (d) => d.documentKind == 'CERTIFICATE',
+          orElse: () => documents.first,
+        );
+      }
+
+      final result = await _tripService.getCoverages(
+        tripId: tripId,
+        documentId: document.id,
+      );
+      if (!mounted) return;
+      setState(() => _coverageResult = result);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _coverageError =
+            e is TripException ? e.message : '보장 내역을 불러오지 못했어요';
+      });
+    } finally {
+      if (mounted) setState(() => _isLoadingCoverages = false);
     }
   }
 
@@ -80,13 +143,13 @@ class _CoverageScreenState extends State<CoverageScreen> {
     try {
       final sessions = await _tripService.listTrips();
       if (!mounted) return;
-      setState(() {
-        if (sessions.isEmpty) {
-          _tripLoadError = '등록된 여행이 없어요';
-        } else {
-          _selectedTrip = Trip.fromSession(sessions.first);
-        }
-      });
+      if (sessions.isEmpty) {
+        setState(() => _tripLoadError = '등록된 여행이 없어요');
+        return;
+      }
+      final trip = Trip.fromSession(sessions.first);
+      setState(() => _selectedTrip = trip);
+      _loadCoverages(tripId: trip.id);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -99,118 +162,11 @@ class _CoverageScreenState extends State<CoverageScreen> {
     final current = _selectedTrip;
     if (current == null) return;
     final picked = await showTripSelectSheet(context, selected: current);
-    if (picked != null) setState(() => _selectedTrip = picked);
+    if (picked != null) {
+      setState(() => _selectedTrip = picked);
+      _loadCoverages(tripId: picked.id);
+    }
   }
-
-  static const List<CoverageItem> _items = [
-    CoverageItem(
-      emoji: '🏥',
-      title: '의료비',
-      subtitle: '입원·통원·응급 치료',
-      limitLabel: '최대 1억원',
-      insurer: '삼성화재 여행자보험',
-      summaryItems: [
-        SummaryItem(label: '입원', value: '최대 1억원'),
-        SummaryItem(label: '통원', value: '회당 30만원'),
-        SummaryItem(label: '응급', value: '무제한'),
-      ],
-      detailItems: [
-        DetailItem(title: '외래 진료비', subtitle: '의사 진료, 검사, 처방 포함', isCovered: true),
-        DetailItem(title: '입원 치료비', subtitle: '병실료, 수술비, 간호비 포함', isCovered: true),
-        DetailItem(title: '응급 처치', subtitle: '응급실 내원 시 즉시 적용', isCovered: true),
-        DetailItem(title: '처방약 비용', subtitle: '처방전 발급 약품 한정', isCovered: true),
-        DetailItem(title: '앰뷸런스 이용', subtitle: '현지 응급 이송 비용', isCovered: true),
-        DetailItem(title: '미용·성형 수술', subtitle: '보장 제외', isCovered: false),
-        DetailItem(title: '기존 질환 치료', subtitle: '여행 전 진단된 질환 제외', isCovered: false),
-      ],
-    ),
-    CoverageItem(
-      emoji: '✈️',
-      title: '항공 지연',
-      subtitle: '3시간 이상 지연',
-      limitLabel: '최대 30만원',
-      insurer: '삼성화재 여행자보험',
-      summaryItems: [
-        SummaryItem(label: '지연', value: '최대 30만원'),
-        SummaryItem(label: '결항', value: '최대 50만원'),
-        SummaryItem(label: '대기', value: '3시간 이상'),
-      ],
-      detailItems: [
-        DetailItem(title: '항공편 지연', subtitle: '3시간 이상 지연 시 적용', isCovered: true),
-        DetailItem(title: '항공편 결항', subtitle: '비자발적 결항에 한함', isCovered: true),
-        DetailItem(title: '자발적 취소', subtitle: '본인 사정에 의한 취소 제외', isCovered: false),
-      ],
-    ),
-    CoverageItem(
-      emoji: '🧳',
-      title: '수하물',
-      subtitle: '항공사 귀책 한정',
-      limitLabel: '최대 50만원',
-      insurer: '삼성화재 여행자보험',
-      summaryItems: [
-        SummaryItem(label: '분실', value: '최대 50만원'),
-        SummaryItem(label: '파손', value: '최대 30만원'),
-        SummaryItem(label: '지연', value: '최대 10만원'),
-      ],
-      detailItems: [
-        DetailItem(title: '수하물 분실', subtitle: '항공사 귀책 분실에 한함', isCovered: true),
-        DetailItem(title: '수하물 파손', subtitle: '항공사 과실에 의한 파손', isCovered: true),
-        DetailItem(title: '귀중품 분실', subtitle: '현금·유가증권 제외', isCovered: false),
-      ],
-    ),
-    CoverageItem(
-      emoji: '🚑',
-      title: '긴급 이송',
-      subtitle: '의료진 동반 후송',
-      limitLabel: '한도 없음',
-      insurer: '삼성화재 여행자보험',
-      summaryItems: [
-        SummaryItem(label: '이송비', value: '한도 없음'),
-        SummaryItem(label: '동반', value: '의료진'),
-        SummaryItem(label: '대상', value: '전 질환'),
-      ],
-      detailItems: [
-        DetailItem(title: '항공 이송', subtitle: '의료진 동반 본국 후송', isCovered: true),
-        DetailItem(title: '구급차 이용', subtitle: '현지 응급 이송 비용', isCovered: true),
-        DetailItem(title: '비응급 이송', subtitle: '의료상 필요 없는 이송 제외', isCovered: false),
-      ],
-    ),
-    CoverageItem(
-      emoji: '🦷',
-      title: '치과 응급',
-      subtitle: '급성 치통·외상',
-      limitLabel: '최대 50만원',
-      insurer: '삼성화재 여행자보험',
-      summaryItems: [
-        SummaryItem(label: '응급', value: '최대 50만원'),
-        SummaryItem(label: '외상', value: '포함'),
-        SummaryItem(label: '치통', value: '급성 한정'),
-      ],
-      detailItems: [
-        DetailItem(title: '급성 치통', subtitle: '여행 중 발생한 급성 치통', isCovered: true),
-        DetailItem(title: '치아 외상', subtitle: '사고에 의한 치아 파손', isCovered: true),
-        DetailItem(title: '교정·미용', subtitle: '교정 및 미용 목적 치료 제외', isCovered: false),
-      ],
-    ),
-    CoverageItem(
-      emoji: '⚖️',
-      title: '배상 책임',
-      subtitle: '제3자 피해 보상',
-      limitLabel: '최대 1억원',
-      insurer: '삼성화재 여행자보험',
-      summaryItems: [
-        SummaryItem(label: '대인', value: '최대 1억원'),
-        SummaryItem(label: '대물', value: '최대 500만원'),
-        SummaryItem(label: '공제', value: '1만원'),
-      ],
-      detailItems: [
-        DetailItem(title: '대인 배상', subtitle: '제3자 신체 피해 보상', isCovered: true),
-        DetailItem(title: '대물 배상', subtitle: '제3자 재물 피해 보상', isCovered: true),
-        DetailItem(title: '고의 사고', subtitle: '고의로 인한 사고 제외', isCovered: false),
-        DetailItem(title: '가족 간 사고', subtitle: '피보험자 가족 간 사고 제외', isCovered: false),
-      ],
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -296,23 +252,204 @@ class _CoverageScreenState extends State<CoverageScreen> {
               ),
             ),
 
+            if (_coverageResult != null && !_coverageResult!.coveragesComplete)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: _CoveragesIncompleteNotice(),
+                ),
+              ),
+
             // ── 보장 카드 그리드 ──
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-              sliver: SliverGrid(
-                delegate: SliverChildBuilderDelegate(
-                      (context, index) => _CoverageCard(item: _items[index]),
-                  childCount: _items.length,
-                ),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  mainAxisExtent: 150,
-                ),
-              ),
+              sliver: _buildCoverageGridSliver(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCoverageGridSliver() {
+    if (_coverageError != null) {
+      return SliverToBoxAdapter(
+        child: _CoverageStatusMessage(text: _coverageError!),
+      );
+    }
+
+    final result = _coverageResult;
+    if (result == null || _isLoadingCoverages) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 60),
+          child: Center(
+            child: CircularProgressIndicator(color: Color(0xFF0888F6)),
+          ),
+        ),
+      );
+    }
+
+    if (result.coverages.isEmpty) {
+      return SliverToBoxAdapter(
+        child: _CoverageStatusMessage(
+          text: result.status == 'COMPLETED'
+              ? '표시할 보장 내역이 없어요'
+              : '아직 분석이 진행 중이라 보장 내역을 볼 수 없어요',
+        ),
+      );
+    }
+
+    final items = result.coverages.map(_coverageItemFrom).toList();
+    return SliverGrid(
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => _CoverageCard(item: items[index]),
+        childCount: items.length,
+      ),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        mainAxisExtent: 150,
+      ),
+    );
+  }
+
+  CoverageItem _coverageItemFrom(api.Coverage coverage) {
+    return CoverageItem(
+      emoji: _emojiForCoverage(coverage),
+      title: coverage.title,
+      subtitle: coverage.subtitle ?? coverage.category ?? '',
+      limitLabel: _limitLabelFor(coverage),
+      isCovered: coverage.isCovered,
+      insurer: '분석된 보험 증권',
+      summaryItems: _summaryItemsFor(coverage),
+      detailItems: _detailItemsFor(coverage),
+    );
+  }
+
+  String _emojiForCoverage(api.Coverage coverage) {
+    final text = '${coverage.category ?? ''} ${coverage.title}';
+    if (text.contains('치과')) return '🦷';
+    if (text.contains('의료') || text.contains('질병') || text.contains('상해')) {
+      return '🏥';
+    }
+    if (text.contains('항공') || text.contains('지연') || text.contains('결항')) {
+      return '✈️';
+    }
+    if (text.contains('수하물') ||
+        text.contains('휴대품') ||
+        text.contains('도난') ||
+        text.contains('분실')) {
+      return '🧳';
+    }
+    if (text.contains('이송') || text.contains('구급')) return '🚑';
+    if (text.contains('배상')) return '⚖️';
+    if (text.contains('여권')) return '🛂';
+    if (text.contains('중단') || text.contains('취소')) return '🚨';
+    return '🛡️';
+  }
+
+  String _limitLabelFor(api.Coverage coverage) {
+    final label = coverage.limitLabel;
+    if (label != null && label.isNotEmpty) return label;
+
+    final amount = coverage.limitAmount;
+    if (amount != null) {
+      final currency = coverage.limitCurrency ?? '원';
+      return '최대 ${_formatAmount(amount)}$currency';
+    }
+    return '한도 확인 필요';
+  }
+
+  String _formatAmount(num amount) {
+    final digits = amount.toInt().toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i != 0 && (digits.length - i) % 3 == 0) buffer.write(',');
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
+  }
+
+  List<SummaryItem> _summaryItemsFor(api.Coverage coverage) {
+    return coverage.subLimits
+        .take(3)
+        .map((s) => SummaryItem(label: s.label, value: s.value))
+        .toList();
+  }
+
+  List<DetailItem> _detailItemsFor(api.Coverage coverage) {
+    final items = coverage.detailItems
+        .map((d) => DetailItem(
+              title: d.title,
+              subtitle: d.subtitle ?? '',
+              isCovered: d.isCovered,
+            ))
+        .toList();
+    items.addAll(coverage.exclusions.map((e) => DetailItem(
+          title: e.title,
+          subtitle: e.description ?? e.sourceText ?? '보장 제외',
+          isCovered: false,
+        )));
+    return items;
+  }
+}
+
+// ── 보장 정보가 아직 다 확인되지 않았다는 안내 ─────────────────
+class _CoveragesIncompleteNotice extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF5DFA0)),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: 1),
+            child: Icon(Icons.info_outline, size: 16, color: Color(0xFF9A7B1F)),
+          ),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '아직 모든 담보를 확인하지 못했어요. 미보장으로 표시된 항목도\n'
+              '실제로는 가입되어 있을 수 있어요.',
+              style: TextStyle(
+                fontSize: 11.44,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF7A5E12),
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CoverageStatusMessage extends StatelessWidget {
+  final String text;
+  const _CoverageStatusMessage({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 60),
+      child: Center(
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+            color: Color(0xFF5B7BA6),
+          ),
         ),
       ),
     );
