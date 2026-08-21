@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -38,6 +41,9 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  /// 디자인 기준 스마트폰 화면 크기. 웹에서 이 비율을 그대로 유지한다.
+  static const Size _designSize = Size(390, 844);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -46,6 +52,44 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0066C3)),
       ),
+      // 웹 브라우저에서 열었을 때 앱을 390:844 비율의 스마트폰 화면으로
+      // 고정하고 양옆은 흰색으로 채운다. 창을 줄이면 이 비율을 유지한 채
+      // 같이 작아지고, 창이 더 크더라도 원본 크기(scale 1) 이상으로는
+      // 키우지 않는다. 앱/모바일 웹에서는 화면이 이미 이 크기라 영향 없다.
+      builder: (context, child) {
+        if (!kIsWeb || child == null) return child ?? const SizedBox.shrink();
+        return Container(
+          color: Colors.white,
+          child: Center(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final scale = math.min(
+                  1.0,
+                  math.min(
+                    constraints.maxWidth / _designSize.width,
+                    constraints.maxHeight / _designSize.height,
+                  ),
+                );
+                return SizedBox(
+                  width: _designSize.width * scale,
+                  height: _designSize.height * scale,
+                  child: FittedBox(
+                    fit: BoxFit.contain,
+                    child: SizedBox(
+                      width: _designSize.width,
+                      height: _designSize.height,
+                      child: MediaQuery(
+                        data: MediaQuery.of(context).copyWith(size: _designSize),
+                        child: child,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
       home: const _RootScreen(),
     );
   }
