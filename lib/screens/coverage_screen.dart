@@ -150,7 +150,8 @@ class _CoverageScreenState extends State<CoverageScreen> {
         setState(() => _tripLoadError = '등록된 여행이 없어요');
         return;
       }
-      final trip = Trip.fromSession(sessions.first);
+      // 진행 중인 여행을 기본으로 보여준다 (없으면 다가오는 여행 → 지난 여행)
+      final trip = Trip.fromSession(pickCurrentTrip(sessions)!);
       setState(() => _selectedTrip = trip);
       _loadCoverages(tripId: trip.id);
     } catch (e) {
@@ -336,23 +337,12 @@ class _CoverageScreenState extends State<CoverageScreen> {
     );
   }
 
-  static final RegExp _rawNumberPattern = RegExp(r'^\d+$');
-
   List<SummaryItem> _summaryItemsFor(api.Coverage coverage) {
     return coverage.subLimits
         .take(3)
-        .map((s) => SummaryItem(label: s.label, value: _subLimitValue(s)))
+        .map((s) =>
+            SummaryItem(label: s.label, value: humanizeMoneyText(s.value)))
         .toList();
-  }
-
-  /// value가 "3시간 이상"처럼 이미 문구면 그대로 두고, 순수 숫자("1000000")면
-  /// 만/억 단위로 바꿔 보여준다.
-  String _subLimitValue(api.CoverageSubLimit subLimit) {
-    final raw = subLimit.value.trim();
-    if (_rawNumberPattern.hasMatch(raw)) {
-      return formatKoreanWon(int.parse(raw));
-    }
-    return subLimit.value;
   }
 
   List<DetailItem> _detailItemsFor(api.Coverage coverage) {
