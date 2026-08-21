@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'coverage_detail_screen.dart';
+import '../core/app_log.dart';
 import '../core/coverage_display.dart';
 import '../core/models/coverage_result.dart' as api;
 import '../core/models/trip_document.dart';
@@ -118,7 +119,7 @@ class _CoverageScreenState extends State<CoverageScreen> {
           throw const TripException(0, '이 여행에 업로드된 문서가 없어요');
         }
         document = documents.firstWhere(
-          (d) => d.documentKind == 'CERTIFICATE',
+          (d) => d.isCertificate,
           orElse: () => documents.first,
         );
       }
@@ -130,6 +131,7 @@ class _CoverageScreenState extends State<CoverageScreen> {
       if (!mounted) return;
       setState(() => _coverageResult = result);
     } catch (e) {
+      appLog('CoverageScreen', '보장 내역 불러오기 실패: $e');
       if (!mounted) return;
       setState(() {
         _coverageError =

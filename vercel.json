@@ -1,1 +1,1 @@
-{"rewrites":[{"source":"/(.*)","destination":"/index.html"}]}
+{"rewrites":[{"source":"/api/(.*)","destination":"http://3.35.178.29/api/$1"},{"source":"/(.*)","destination":"/index.html"}]}

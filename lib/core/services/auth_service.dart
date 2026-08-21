@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../app_log.dart';
 import '../models/auth_token.dart';
 import 'token_storage.dart';
 
@@ -41,11 +42,16 @@ class AuthService {
 
   static String get _baseUrl => _env('API_BASE_URL');
 
+  /// 웹은 HTTPS 페이지에서 HTTP 백엔드로 바로 요청하면 Mixed Content로
+  /// 막히므로, 같은 오리진의 상대 경로로 보내고 vercel.json의 /api rewrite가
+  /// 서버사이드에서 실제 백엔드로 프록시한다. 모바일은 절대 주소를 그대로 쓴다.
+  static String get _requestOrigin => kIsWeb ? '' : _baseUrl;
+
   static String get kakaoRestApiKey => _env('KAKAO_REST_API_KEY');
 
   static String get kakaoRedirectUri => _env('KAKAO_REDIRECT_URI');
 
-  void _log(String message) => developer.log(message, name: _logName);
+  void _log(String message) => appLog(_logName, message);
 
   /// 사용자가 카카오 로그인 동의 화면에서 인증을 마치면 이동하는 인가 URL.
   /// 여기로 브라우저/웹뷰를 열고, redirect_uri 로 돌아올 때 붙는 `code` 파라미터를
@@ -74,7 +80,7 @@ class AuthService {
     _log('카카오 로그인 요청 시작');
 
     final response = await http.post(
-      Uri.parse('$_baseUrl/api/auth/kakao/login'),
+      Uri.parse('$_requestOrigin/api/auth/kakao/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'authorizationCode': authorizationCode}),
     );
@@ -88,9 +94,18 @@ class AuthService {
 
     final json = jsonDecode(utf8.decode(response.bodyBytes))
         as Map<String, dynamic>;
+    // 백엔드가 어떤 필드를 내려줬는지 확인용. accessToken은 길고 민감해서 제외한다.
+    _log('카카오 로그인 응답 필드=${json.keys.toList()}'
+        ' nickname=${json['nickname']} profileImageUrl=${json['profileImageUrl']}');
+
     final token = AuthToken.fromJson(json);
     await _tokenStorage.save(token);
-    _log('카카오 로그인 성공, access token 저장 완료');
+
+    // 저장이 실제로 됐는지(특히 웹 localStorage) 되읽어 확인한다.
+    final saved = await _tokenStorage.readProfile();
+    final savedToken = await _tokenStorage.readValid();
+    _log('카카오 로그인 성공, 저장 확인'
+        ' tokenSaved=${savedToken != null} nickname=${saved.nickname}');
     return token;
   }
 

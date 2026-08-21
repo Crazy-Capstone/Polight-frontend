@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -7,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../main.dart';
+import '../core/app_log.dart';
 import '../core/models/trip_analysis.dart';
 import '../core/models/trip_document.dart';
 import '../core/models/trip_session.dart';
@@ -92,20 +92,13 @@ class _AnalysisProgressScreenState extends State<AnalysisProgressScreen>
         tripId: widget.trip.id,
         documentId: widget.document.id,
       );
-      developer.log(
-        '분석 상태 폴링 성공 status=${analysis.status} failureReason=${analysis.failureReason}',
-        name: 'AnalysisProgressScreen',
-      );
+      appLog('AnalysisProgress',
+          '분석 상태 폴링 성공 status=${analysis.status} failureReason=${analysis.failureReason}');
       if (!mounted) return;
       _handleStatus(analysis.status, failureReason: analysis.failureReason);
-    } catch (e, stackTrace) {
+    } catch (e) {
       // 일시적인 네트워크 오류는 다음 폴링에서 다시 시도한다.
-      developer.log(
-        '분석 상태 폴링 실패',
-        name: 'AnalysisProgressScreen',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      appLog('AnalysisProgress', '분석 상태 폴링 실패: $e');
     }
   }
 

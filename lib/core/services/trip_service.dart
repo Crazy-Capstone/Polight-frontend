@@ -1,9 +1,10 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import '../app_log.dart';
 import '../models/coverage_result.dart';
 import '../models/trip_analysis.dart';
 import '../models/trip_document.dart';
@@ -43,7 +44,13 @@ class TripService {
 
   static String get _baseUrl => _env('API_BASE_URL');
 
-  void _log(String message) => developer.log(message, name: _logName);
+  /// 실제 요청에 붙일 origin. 웹은 HTTPS로 떠 있는데 백엔드가 아직 HTTP라
+  /// Mixed Content로 막히므로, 같은 오리진의 상대 경로로 요청하고
+  /// vercel.json의 /api rewrite가 서버사이드에서 실제 백엔드로 프록시한다.
+  /// (모바일은 이 제약이 없어 .env의 절대 주소를 그대로 쓴다.)
+  static String get _requestOrigin => kIsWeb ? '' : _baseUrl;
+
+  void _log(String message) => appLog(_logName, message);
 
   /// 백엔드 응답에 담긴 필드를 빠짐없이 보기 위해 원본 JSON을 그대로 찍는다.
   void _logBody(String label, dynamic json) {
@@ -78,7 +85,7 @@ class TripService {
 
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('$_baseUrl/api/v1/trips'),
+      Uri.parse('$_requestOrigin/api/v1/trips'),
     )
       ..files.add(
         http.MultipartFile.fromString(
@@ -146,7 +153,7 @@ class TripService {
     }
 
     final response = await http.post(
-      Uri.parse('$_baseUrl/api/v1/trips/$tripId/documents/$documentId/analysis'),
+      Uri.parse('$_requestOrigin/api/v1/trips/$tripId/documents/$documentId/analysis'),
       headers: headers,
     );
 
@@ -181,7 +188,7 @@ class TripService {
     }
 
     final response = await http.get(
-      Uri.parse('$_baseUrl/api/v1/trips/$tripId/documents/$documentId/analysis'),
+      Uri.parse('$_requestOrigin/api/v1/trips/$tripId/documents/$documentId/analysis'),
       headers: headers,
     );
 
@@ -214,7 +221,7 @@ class TripService {
     }
 
     final response = await http.get(
-      Uri.parse('$_baseUrl/api/v1/trips/$tripId/documents'),
+      Uri.parse('$_requestOrigin/api/v1/trips/$tripId/documents'),
       headers: headers,
     );
 
@@ -252,7 +259,7 @@ class TripService {
 
     final response = await http.get(
       Uri.parse(
-        '$_baseUrl/api/v1/trips/$tripId/documents/$documentId/analysis/coverages',
+        '$_requestOrigin/api/v1/trips/$tripId/documents/$documentId/analysis/coverages',
       ),
       headers: headers,
     );
@@ -285,7 +292,7 @@ class TripService {
     }
 
     final response = await http.get(
-      Uri.parse('$_baseUrl/api/v1/trips'),
+      Uri.parse('$_requestOrigin/api/v1/trips'),
       headers: headers,
     );
 
