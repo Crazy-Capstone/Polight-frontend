@@ -34,19 +34,28 @@ String limitLabelFor(Coverage coverage) {
   if (amount == null) return '한도 확인 필요';
 
   final currency = coverage.limitCurrency;
-  final isWon =
-      currency == null || currency.isEmpty || currency == '원' || currency == 'KRW';
+  final isWon = currency == null ||
+      currency.isEmpty ||
+      currency == '원' ||
+      currency == 'KRW' ||
+      currency == '₩';
   if (!isWon) return '최대 ${withComma(amount.toInt())}$currency';
   return '최대 ${formatKoreanWon(amount)}';
 }
 
+/// 금액 앞에 붙는 통화 표시(₩, KRW, W). 우리는 '원'을 뒤에 붙이므로 떼어낸다.
+/// 바로 뒤에 숫자가 오는 경우에만 떼서, 통화 코드만 있는 문구는 건드리지 않는다.
+final RegExp _leadingCurrency = RegExp(r'(?:₩|KRW|\bW)\s*(?=\d)');
+
 /// 백엔드가 준 금액 문구를 만/억 단위로 다듬는다.
 ///
 /// - `"1000000"`, `"1,000,000원"` → `"100만원"`
+/// - `"₩1000000"`, `"KRW 1000000"` → `"100만원"` (앞에 붙은 통화 표시는 뗀다)
 /// - `"최대 100000000원"` → `"최대 1억원"`
 /// - `"한도 없음"`, `"3시간 이상"`처럼 금액이 아니거나 이미 만/억으로 쓰인 문구는 그대로 둔다.
 String humanizeMoneyText(String raw) {
-  final text = raw.trim();
+  // 숫자 앞에 붙은 통화 표시는 '원' 접미사와 중복되므로 먼저 제거한다.
+  final text = raw.replaceAll(_leadingCurrency, '').trim();
   if (text.isEmpty) return text;
 
   // 문자열 전체가 금액 하나인 경우 (원 단위까지 붙여서 반환)
