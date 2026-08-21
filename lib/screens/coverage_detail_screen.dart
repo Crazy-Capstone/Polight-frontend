@@ -130,26 +130,28 @@ class _BlueHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '보장 상세',
-                    style: TextStyle(
-                      fontSize: 17.68,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '보장 상세',
+                      style: TextStyle(
+                        fontSize: 17.68,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  Text(
-                    coverageTitle,
-                    style: TextStyle(
-                      fontSize: 12.48,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF9EBEFE),
+                    Text(
+                      coverageTitle,
+                      style: TextStyle(
+                        fontSize: 12.48,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF9EBEFE),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -171,27 +173,29 @@ class _BlueHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 14),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    coverageTitle,
-                    style: const TextStyle(
-                      fontSize: 18.72,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      coverageTitle,
+                      style: const TextStyle(
+                        fontSize: 18.72,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    insurer,
-                    style: TextStyle(
-                      fontSize: 12.48,
-                      color: Color(0xFF9EBEFE),
-                      fontWeight: FontWeight.w400,
+                    const SizedBox(height: 2),
+                    Text(
+                      insurer,
+                      style: TextStyle(
+                        fontSize: 12.48,
+                        color: Color(0xFF9EBEFE),
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
