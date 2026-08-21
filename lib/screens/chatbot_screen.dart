@@ -1,11 +1,14 @@
-import 'dart:developer' as developer;
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../core/app_log.dart';
+import '../core/models/chat_answer.dart';
 import '../core/models/chat_message.dart';
 import '../core/models/place_category.dart';
 import '../core/models/place_result.dart';
+import '../core/services/chat_service.dart';
 import '../core/services/place_service.dart';
 import '../core/services/token_storage.dart';
+import '../core/services/trip_service.dart';
 import '../widgets/place_card.dart';
 
 class ChatbotScreen extends StatefulWidget {
@@ -16,33 +19,33 @@ class ChatbotScreen extends StatefulWidget {
 }
 
 class _ChatbotScreenState extends State<ChatbotScreen> {
+  static const String _logName = 'ChatbotScreen';
+
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _inputController = TextEditingController();
   final PlaceService _placeService = PlaceService();
+  final ChatService _chatService = ChatService();
+  final TripService _tripService = TripService();
 
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
 
+  /// 질문을 보낼 여행. 대화 세션은 여행당 하나라 이 id가 곧 대화방이다.
+  String? _tripId;
+  String? _tripName;
+
   static const _negationWords = ['싫어', '말고', '아니'];
-
-  static const _flightDelayKeywords = ['지연', '연착'];
-  static const _compensationKeywords = ['보상', '환급', '받을 수 있', '돼', '될까', '되나'];
-
-  bool _isFlightDelayIntent(String text) {
-    final hasDelay = _flightDelayKeywords.any((w) => text.contains(w));
-    final hasCompensation = _compensationKeywords.any((w) => text.contains(w));
-    return hasDelay && hasCompensation;
-  }
 
   @override
   void initState() {
     super.initState();
     _messages.add(ChatMessage.bot(_greeting('회원')));
     _loadNickname();
+    _loadTripAndHistory();
   }
 
   String _greeting(String name) =>
-      '안녕하세요, $name님! ⭐\n일본 여행 중이시군요.\n무엇을 도와드릴까요?';
+      '안녕하세요, $name님! ⭐\n보험 약관에 대해 궁금한 걸 물어보세요.';
 
   Future<void> _loadNickname() async {
     try {
@@ -54,6 +57,40 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       }
     } catch (_) {
       // 저장된 닉네임이 없거나 조회에 실패하면 기본 인사말을 그대로 쓴다
+    }
+  }
+
+  /// 가장 최근 여행을 대화 대상으로 잡고, 서버에 저장된 지난 대화를 불러온다.
+  Future<void> _loadTripAndHistory() async {
+    try {
+      final sessions = await _tripService.listTrips();
+      if (!mounted || sessions.isEmpty) {
+        if (sessions.isEmpty) appLog(_logName, '등록된 여행이 없어 챗봇 질문 불가');
+        return;
+      }
+
+      final trip = sessions.first;
+      setState(() {
+        _tripId = trip.id;
+        _tripName = trip.name;
+      });
+
+      final history = await _chatService.getHistory(tripId: trip.id);
+      if (!mounted || history.messages.isEmpty) return;
+
+      setState(() {
+        for (final m in history.messages) {
+          if (m.content.isEmpty) continue;
+          _messages.add(
+            m.isUser
+                ? ChatMessage.user(m.content, at: m.createdAt)
+                : ChatMessage.bot(m.content, at: m.createdAt),
+          );
+        }
+      });
+      _scrollToBottom();
+    } catch (e) {
+      appLog(_logName, '여행/대화 이력 불러오기 실패: $e');
     }
   }
 
@@ -81,50 +118,68 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     setState(() => _messages.add(ChatMessage.user(trimmed)));
     _scrollToBottom();
 
+    // 주변 장소 찾기는 위치 기반이라 앱에서 직접 처리하고,
+    // 그 외 질문은 약관을 근거로 답하는 챗봇 API에 넘긴다.
     final category = _detectPlaceCategory(trimmed);
     if (category != null) {
       await _handlePlaceSearch(category);
-    } else if (_isFlightDelayIntent(trimmed)) {
-      await _handleFlightDelayCompensation();
     } else {
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (!mounted) return;
-      setState(() {
-        _messages.add(
-          ChatMessage.bot(
-            '죄송해요, 현재는 주변 병원 · 경찰서 · 대사관 찾기를 지원하고 있어요.\n하단의 빠른 답변 버튼을 눌러보세요!',
-          ),
-        );
-      });
-      _scrollToBottom();
+      await _askChatbot(trimmed);
     }
   }
 
-  Future<void> _handleFlightDelayCompensation() async {
+  /// 약관 기반 답변을 백엔드 AI에 요청한다.
+  /// 502(AI 서버 무응답)여도 질문은 서버에 저장되어 있으므로 화면에서 지우지 않는다.
+  Future<void> _askChatbot(String question) async {
+    final tripId = _tripId;
+    if (tripId == null) {
+      setState(() {
+        _messages.add(ChatMessage.bot(
+          '아직 등록된 여행이 없어요.\n증권을 먼저 업로드하면 약관을 바탕으로 답변해 드릴 수 있어요.',
+        ));
+      });
+      _scrollToBottom();
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _messages.add(ChatMessage.loading());
     });
     _scrollToBottom();
 
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (!mounted) return;
-
-    setState(() {
-      _messages.removeLast();
-      _isLoading = false;
-      _messages.add(ChatMessage.bot(
-        '아쉽게도 2시간 지연은 보상 대상이 아니에요 😢\n\n'
-        '✈️ 항공 지연 보상 기준\n'
-        '• 3시간 이상 ~ 5시간 미만: 최대 10만원\n'
-        '• 5시간 이상 ~ 7시간 미만: 최대 20만원\n'
-        '• 7시간 이상: 최대 30만원\n\n'
-        '지연이 3시간을 넘기면 항공사에서 발급하는 '
-        '지연 확인서를 꼭 챙겨두세요!\n'
-        '귀국 후 보험사에 청구하시면 돼요 😊',
-      ));
-    });
+    try {
+      final answer = await _chatService.ask(tripId: tripId, question: question);
+      if (!mounted) return;
+      setState(() {
+        _messages.removeLast(); // 로딩 표시 제거
+        _isLoading = false;
+        _messages.add(ChatMessage.bot(_answerText(answer)));
+      });
+    } catch (e) {
+      appLog(_logName, '질문 실패: $e');
+      if (!mounted) return;
+      setState(() {
+        _messages.removeLast();
+        _isLoading = false;
+        _messages.add(ChatMessage.bot(
+          e is ChatException ? e.message : '답변을 받지 못했어요. 잠시 후 다시 시도해 주세요.',
+        ));
+      });
+    }
     _scrollToBottom();
+  }
+
+  /// 답변 본문에 근거 조항을 덧붙인다. 근거가 없으면 본문만 보여준다.
+  String _answerText(ChatAnswer answer) {
+    final labels = answer.sources
+        .map((s) => s.label)
+        .whereType<String>()
+        .toSet()
+        .take(3)
+        .toList();
+    if (labels.isEmpty) return answer.answer;
+    return '${answer.answer}\n\n📄 근거: ${labels.join(', ')}';
   }
 
   Future<void> _handlePlaceSearch(PlaceCategory category) async {
@@ -155,9 +210,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           );
         }
       });
-    } catch (e, s) {
-      developer.log('${category.label} 검색 중 예외 발생',
-          name: 'ChatbotScreen', error: e, stackTrace: s);
+    } catch (e) {
+      appLog(_logName, '${category.label} 검색 중 예외 발생: $e');
       if (!mounted) return;
       setState(() {
         _messages.removeLast();
@@ -188,7 +242,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: _AppBar(),
+      appBar: _AppBar(tripName: _tripName),
       body: Column(
         children: [
           const Divider(height: 1, thickness: 1, color: Color(0xFFEEF2FF)),
@@ -233,6 +287,11 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
 // ── 앱바 ─────────────────────────────────────────────────────
 class _AppBar extends StatelessWidget implements PreferredSizeWidget {
+  /// 어느 여행의 약관을 근거로 답하는지 보여준다. 아직 못 불러왔으면 null.
+  final String? tripName;
+
+  const _AppBar({this.tripName});
+
   @override
   Size get preferredSize => const Size.fromHeight(60);
 
@@ -282,9 +341,9 @@ class _AppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Text(
-                    '지금 응답 가능',
-                    style: TextStyle(
+                  Text(
+                    tripName ?? '지금 응답 가능',
+                    style: const TextStyle(
                       fontSize: 11.44,
                       fontWeight: FontWeight.w400,
                       color: Color(0xFF6B7280),

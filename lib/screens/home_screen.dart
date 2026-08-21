@@ -4,8 +4,10 @@ import 'package:geolocator/geolocator.dart';
 import '../core/app_log.dart';
 import '../core/coverage_display.dart';
 import '../core/models/coverage_result.dart';
+import '../core/models/trip_session.dart';
 import '../core/services/token_storage.dart';
 import '../core/services/trip_service.dart';
+import '../widgets/trip_select_sheet.dart';
 import 'upload_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -27,6 +29,9 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Coverage>? _coverages;
   String? _coverageError;
 
+  /// 여행 카드에 기간·D-day를 보여줄 최근 여행. 없으면 안내 문구를 띄운다.
+  Trip? _trip;
+
   @override
   void initState() {
     super.initState();
@@ -44,7 +49,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
-      final tripId = sessions.first.id;
+      final current = _pickCurrentTrip(sessions);
+      setState(() => _trip = Trip.fromSession(current));
+
+      final tripId = current.id;
       final documents = await _tripService.getDocuments(tripId: tripId);
       if (documents.isEmpty) {
         if (!mounted) return;
@@ -72,6 +80,52 @@ class _HomeScreenState extends State<HomeScreen> {
         _coverageError = e is TripException ? e.message : '보험 현황을 불러오지 못했어요';
       });
     }
+  }
+
+  /// 홈 카드는 지금 진행 중인 여행을 보여준다.
+  /// 진행 중인 게 없으면 가장 가까운 예정 여행, 그것도 없으면 가장 최근 여행.
+  TripSession _pickCurrentTrip(List<TripSession> sessions) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    bool startedBy(TripSession s) =>
+        !DateTime(s.startDate.year, s.startDate.month, s.startDate.day)
+            .isAfter(today);
+    bool notEnded(TripSession s) =>
+        !DateTime(s.endDate.year, s.endDate.month, s.endDate.day)
+            .isBefore(today);
+
+    final ongoing = sessions.where((s) => startedBy(s) && notEnded(s)).toList();
+    if (ongoing.isNotEmpty) {
+      // 여러 개면 먼저 끝나는 여행을 보여준다
+      ongoing.sort((a, b) => a.endDate.compareTo(b.endDate));
+      return ongoing.first;
+    }
+
+    final upcoming = sessions.where((s) => !startedBy(s)).toList();
+    if (upcoming.isNotEmpty) {
+      upcoming.sort((a, b) => a.startDate.compareTo(b.startDate));
+      return upcoming.first;
+    }
+
+    return sessions.first;
+  }
+
+  /// 카드 상단 라벨. 여행 상태에 맞춰 바뀐다.
+  String _tripStatusText() {
+    final trip = _trip;
+    if (trip == null) return '현재 여행';
+    if (trip.isOngoing) return '현재 여행 중';
+    if (trip.isUpcoming) return '다가오는 여행';
+    return '지난 여행';
+  }
+
+  /// "2026. 09. 11 – 09. 18 · D-7" 형태. 여행이 없으면 안내 문구.
+  String _tripPeriodText() {
+    final trip = _trip;
+    if (trip == null) return '등록된 여행이 없어요';
+    final dDay = trip.dDayLabel;
+    return dDay == null ? trip.dateRange : '${trip.dateRange} · $dDay';
   }
 
   Future<void> _loadNickname() async {
@@ -263,9 +317,12 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               const Text('📍', style: TextStyle(fontSize: 13.52)),
               const SizedBox(width: 4),
-              const Text(
-                '현재 여행 중',
-                style: TextStyle(color: Color(0xFF9EBEFE), fontSize: 12.48, fontWeight: FontWeight.w400),
+              Text(
+                _tripStatusText(),
+                style: const TextStyle(
+                    color: Color(0xFF9EBEFE),
+                    fontSize: 12.48,
+                    fontWeight: FontWeight.w400),
               ),
             ],
           ),
@@ -300,9 +357,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
           const SizedBox(height: 6),
-          const Text(
-            '2025. 04. 08 — 04. 18 · D-7',
-            style: TextStyle(color: Color(0xFFA6C8E8), fontSize: 12.48,fontWeight: FontWeight.w400),
+          Text(
+            _tripPeriodText(),
+            style: const TextStyle(
+              color: Color(0xFFA6C8E8),
+              fontSize: 12.48,
+              fontWeight: FontWeight.w400,
+            ),
           ),
           const SizedBox(height: 16),
           const Divider(color: Colors.white24, height: 1),

@@ -14,20 +14,26 @@ class ChatMessage {
   final double? userLat;
   final double? userLng;
 
-  ChatMessage.bot(this.text, {this.places = const [], this.userLat, this.userLng})
-      : sender = MessageSender.bot,
+  /// 서버에서 불러온 지난 대화는 그때의 시각을 그대로 쓰도록 [at]을 넘긴다.
+  ChatMessage.bot(
+    this.text, {
+    this.places = const [],
+    this.userLat,
+    this.userLng,
+    DateTime? at,
+  })  : sender = MessageSender.bot,
         contentType = places.isNotEmpty
             ? MessageContentType.placeCards
             : MessageContentType.text,
-        timestamp = DateTime.now();
+        timestamp = at ?? DateTime.now();
 
-  ChatMessage.user(this.text)
+  ChatMessage.user(this.text, {DateTime? at})
       : sender = MessageSender.user,
         contentType = MessageContentType.text,
         places = const [],
         userLat = null,
         userLng = null,
-        timestamp = DateTime.now();
+        timestamp = at ?? DateTime.now();
 
   ChatMessage.loading()
       : sender = MessageSender.bot,

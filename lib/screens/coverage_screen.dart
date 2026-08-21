@@ -522,8 +522,8 @@ class _TripDateBanner extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            // 만료된 여행은 남은 일수 대신 상태를 보여준다
-            trip.isExpired ? '만료' : 'D-7 남음',
+            // 여행 마지막 날 기준 D-day. 지난 여행은 D+N으로 표시된다.
+            trip.dDayLabel ?? '',
             style: TextStyle(
               fontSize: 12.48,
               fontWeight: FontWeight.w700,

@@ -10,6 +10,10 @@ class Trip {
   final String dateRange;
   final bool isExpired;
 
+  /// 여행 첫날/마지막 날. D-day 계산과 진행 여부 판단에 쓴다.
+  final DateTime? startDate;
+  final DateTime? endDate;
+
   /// 여행지 국기 이모지. 없으면 뱃지에 표시하지 않는다.
   final String flag;
 
@@ -18,8 +22,42 @@ class Trip {
     required this.name,
     required this.dateRange,
     this.isExpired = true,
+    this.startDate,
+    this.endDate,
     this.flag = '',
   });
+
+  /// 오늘이 여행 기간 안에 있는지(첫날·마지막 날 포함).
+  bool get isOngoing {
+    final start = startDate;
+    final end = endDate;
+    if (start == null || end == null) return false;
+    final today = _todayOnly();
+    return !_dateOnly(start).isAfter(today) && !_dateOnly(end).isBefore(today);
+  }
+
+  /// 아직 시작하지 않은 여행인지.
+  bool get isUpcoming {
+    final start = startDate;
+    if (start == null) return false;
+    return _dateOnly(start).isAfter(_todayOnly());
+  }
+
+  /// 여행 마지막 날 기준 D-day.
+  /// 마지막 날까지 남았으면 `D-7`, 당일이면 `D-DAY`, 지났으면 `D+2`.
+  String? get dDayLabel {
+    final end = endDate;
+    if (end == null) return null;
+
+    final now = DateTime.now();
+    final endDay = DateTime(end.year, end.month, end.day);
+    final today = DateTime(now.year, now.month, now.day);
+    final diff = endDay.difference(today).inDays;
+
+    if (diff > 0) return 'D-$diff';
+    if (diff == 0) return 'D-DAY';
+    return 'D+${-diff}';
+  }
 
   /// GET /api/v1/trips 응답 항목을 화면에 쓸 형태로 변환한다.
   /// 국기 이모지는 백엔드가 내려주지 않아 비워 둔다.
@@ -29,9 +67,15 @@ class Trip {
       name: session.name,
       dateRange: _formatDateRange(session.startDate, session.endDate),
       isExpired: _isBeforeToday(session.endDate),
+      startDate: session.startDate,
+      endDate: session.endDate,
     );
   }
 }
+
+DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+DateTime _todayOnly() => _dateOnly(DateTime.now());
 
 String _pad2(int n) => n.toString().padLeft(2, '0');
 
