@@ -6,11 +6,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../main.dart';
 import '../core/models/trip_analysis.dart';
 import '../core/models/trip_document.dart';
 import '../core/models/trip_session.dart';
 import '../core/services/trip_service.dart';
-import 'coverage_screen.dart';
 
 /// 증권 분석이 진행되는 동안 보여주는 화면.
 /// 서버는 진행률(%)을 주지 않으므로, 완료될 때까지 서서히 올라가다가
@@ -149,9 +149,10 @@ class _AnalysisProgressScreenState extends State<AnalysisProgressScreen>
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const CoverageScreen()),
-    );
+    // 하단 GNB가 있는 탭 화면으로 돌아가야 하므로, 이 위로 쌓인 화면을 모두
+    // 걷어내고 '보장내역' 탭으로 전환한다 (push 대신 탭 전환).
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    showCoverageTabForTrip(trip: widget.trip, document: widget.document);
   }
 
   void _retry() {

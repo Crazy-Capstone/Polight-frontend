@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'core/models/trip_document.dart';
+import 'core/models/trip_session.dart';
 import 'core/services/token_storage.dart';
 import 'screens/home_screen.dart';
 import 'screens/coverage_screen.dart';
@@ -8,6 +10,24 @@ import 'screens/chatbot_screen.dart';
 import 'screens/mypage_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+/// 앱 전체에서 하나뿐인 하단 탭 네비게이션 화면을 가리킨다.
+/// 다른 화면에서 push해서 들어온 흐름을 끝내고 특정 탭으로 돌아갈 때 쓴다.
+final GlobalKey<_MainNavigationScreenState> _mainNavigationKey =
+    GlobalKey<_MainNavigationScreenState>();
+
+/// 분석이 끝난 여행/문서를 들고 '보장내역' 탭으로 전환한다.
+/// 하단 GNB가 있는 화면으로 돌아가야 하므로, 이 화면 위로 쌓인 라우트를
+/// 모두 pop한 뒤에 호출해야 한다.
+void showCoverageTabForTrip({
+  required TripSession trip,
+  required TripDocument document,
+}) {
+  _mainNavigationKey.currentState?._showCoverageTab(
+    trip: trip,
+    document: document,
+  );
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,7 +93,7 @@ class _RootScreenState extends State<_RootScreen> {
         onFinished: () => setState(() => _showOnboarding = false),
       );
     }
-    return const MainNavigationScreen();
+    return MainNavigationScreen(key: _mainNavigationKey);
   }
 }
 
@@ -87,12 +107,28 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
+  /// 분석이 막 끝난 여행/문서. '보장내역' 탭이 처음부터 실데이터를 그리도록
+  /// 넘겨준다. 없으면 그 탭이 스스로 최근 여행을 불러온다.
+  TripSession? _coverageTrip;
+  TripDocument? _coverageDocument;
+
   List<Widget> get _screens => [
     HomeScreen(onChatTap: () => setState(() => _currentIndex = 2)),
-    const CoverageScreen(),
+    CoverageScreen(trip: _coverageTrip, document: _coverageDocument),
     const ChatbotScreen(),
     const MypageScreen(),
   ];
+
+  void _showCoverageTab({
+    required TripSession trip,
+    required TripDocument document,
+  }) {
+    setState(() {
+      _coverageTrip = trip;
+      _coverageDocument = document;
+      _currentIndex = 1;
+    });
+  }
 
   static const Color _activeColor = Color(0xFF0066C3);
   static const Color _inactiveColor = Color(0xFF8BA3CC);

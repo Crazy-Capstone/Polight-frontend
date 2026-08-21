@@ -5,6 +5,7 @@ import '../core/services/trip_service.dart';
 
 // ── 데이터 모델 ───────────────────────────────────────────────
 class Trip {
+  final String id;
   final String name;
   final String dateRange;
   final bool isExpired;
@@ -13,6 +14,7 @@ class Trip {
   final String flag;
 
   const Trip({
+    required this.id,
     required this.name,
     required this.dateRange,
     this.isExpired = true,
@@ -23,6 +25,7 @@ class Trip {
   /// 국기 이모지는 백엔드가 내려주지 않아 비워 둔다.
   factory Trip.fromSession(TripSession session) {
     return Trip(
+      id: session.id,
       name: session.name,
       dateRange: _formatDateRange(session.startDate, session.endDate),
       isExpired: _isBeforeToday(session.endDate),
@@ -237,7 +240,7 @@ class _TripSelectSheetState extends State<TripSelectSheet> {
         final trip = trips[i];
         return _TripRow(
           trip: trip,
-          isSelected: trip.name == _selected.name,
+          isSelected: trip.id == _selected.id,
           onTap: () => setState(() => _selected = trip),
         );
       },
