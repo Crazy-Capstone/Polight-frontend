@@ -9,6 +9,20 @@ class UserProfile {
   const UserProfile({this.nickname, this.profileImageUrl});
 
   static const empty = UserProfile();
+
+  /// 화면에 띄울 프로필 사진 주소.
+  ///
+  /// 카카오 CDN이 `http://`로 주소를 내려주는 경우가 있는데, 웹은 HTTPS 페이지라
+  /// 그대로 쓰면 브라우저가 Mixed Content로 차단해서 사진이 안 보인다.
+  /// 카카오 CDN은 HTTPS도 지원하므로 https로 올려서 쓴다.
+  String? get displayImageUrl {
+    final url = profileImageUrl;
+    if (url == null || url.isEmpty) return null;
+    if (url.startsWith('http://')) {
+      return url.replaceFirst('http://', 'https://');
+    }
+    return url;
+  }
 }
 
 /// 로그인 후 발급받은 JWT와 사용자 표시 정보를

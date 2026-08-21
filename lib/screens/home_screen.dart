@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import '../core/app_log.dart';
 import '../core/coverage_display.dart';
 import '../core/models/coverage_result.dart';
 import '../core/services/token_storage.dart';
@@ -52,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       final document = documents.firstWhere(
-        (d) => d.documentKind == 'CERTIFICATE',
+        (d) => d.isCertificate,
         orElse: () => documents.first,
       );
       final result = await _tripService.getCoverages(
@@ -64,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _coverages = result.status == 'COMPLETED' ? result.coverages : [];
       });
     } catch (e) {
+      appLog('HomeScreen', '보험 현황 불러오기 실패: $e');
       if (!mounted) return;
       setState(() {
         _coverages = [];

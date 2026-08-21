@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../core/app_log.dart';
 import '../core/services/auth_service.dart';
 import 'kakao_login_webview.dart';
 
@@ -60,17 +63,36 @@ class OnboardingScreen extends StatefulWidget {
   /// 온보딩을 마쳤을 때(건너뛰기 · 마지막 페이지 진행 · 카카오 시작) 호출된다.
   final VoidCallback? onFinished;
 
-  const OnboardingScreen({super.key, this.onFinished});
+  /// 웹에서 카카오 리다이렉트로 돌아왔다가 로그인에 실패했을 때, 화면이
+  /// 뜨자마자 한 번 보여줄 안내 문구.
+  final String? initialErrorMessage;
+
+  const OnboardingScreen({
+    super.key,
+    this.onFinished,
+    this.initialErrorMessage,
+  });
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
+  static const String _logName = 'Onboarding';
+
   final _controller = PageController();
   final _authService = AuthService();
   int _page = 0;
   bool _isLoggingIn = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final error = widget.initialErrorMessage;
+    if (error != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showError(error));
+    }
+  }
 
   @override
   void dispose() {
@@ -103,19 +125,44 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (_isLoggingIn) return;
     setState(() => _isLoggingIn = true);
 
+    appLog(_logName, '카카오 로그인 버튼 눌림 (web=$kIsWeb)');
+
     try {
+      if (kIsWeb) {
+        // 웹은 webview_flutter를 쓸 수 없으니, 같은 탭에서 카카오 인증
+        // 페이지로 바로 이동한다. 카카오가 redirect_uri로 돌려보내면 앱이
+        // 새로 시작되고, 그 시작 지점(main.dart의 _RootScreen)에서 code를
+        // 읽어 로그인을 마무리한다.
+        final authorizeUri = _authService.buildKakaoAuthorizeUri();
+        appLog(_logName,
+            '카카오 인증 페이지로 이동 시도 redirect_uri=${AuthService.kakaoRedirectUri}');
+        final launched = await launchUrl(authorizeUri, webOnlyWindowName: '_self');
+        appLog(_logName, '카카오 인증 페이지 이동 결과 launched=$launched');
+        if (!launched) {
+          _showError('카카오 로그인 페이지를 열 수 없었어요. 다시 시도해 주세요.');
+        }
+        return;
+      }
+
       final code = await Navigator.of(context).push<String?>(
         MaterialPageRoute(builder: (_) => const KakaoLoginWebView()),
       );
-      if (code == null) return; // 사용자가 취소했거나 동의를 거부함
+      if (code == null) {
+        appLog(_logName, '웹뷰에서 인가 코드 없이 닫힘 (취소/거부)');
+        return;
+      }
 
       await _authService.loginWithKakao(code);
+      appLog(_logName, '로그인 완료 → 메인으로');
       widget.onFinished?.call();
     } on KakaoConfigException catch (e) {
+      appLog(_logName, '설정 오류: ${e.message}');
       _showError(e.message);
     } on AuthException catch (e) {
+      appLog(_logName, '로그인 실패(${e.statusCode}): ${e.message}');
       _showError(e.message);
-    } catch (_) {
+    } catch (e) {
+      appLog(_logName, '로그인 중 예외: $e');
       _showError('카카오 로그인 중 문제가 발생했어요. 다시 시도해 주세요.');
     } finally {
       if (mounted) setState(() => _isLoggingIn = false);

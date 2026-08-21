@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'insurance_history_screen.dart';
+import '../core/app_log.dart';
 import '../core/services/token_storage.dart';
+import '../main.dart';
 
 class MypageScreen extends StatefulWidget {
   const MypageScreen({super.key});
@@ -148,7 +150,7 @@ class _MypageScreenState extends State<MypageScreen> {
 
   // 카카오 프로필 사진이 있으면 보여주고, 없거나 로드에 실패하면 기본 아이콘으로 대체한다.
   Widget _buildAvatar() {
-    final imageUrl = _profile.profileImageUrl;
+    final imageUrl = _profile.displayImageUrl;
     return Container(
       width: 58,
       height: 58,
@@ -166,9 +168,12 @@ class _MypageScreenState extends State<MypageScreen> {
               width: 58,
               height: 58,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => const Center(
-                child: Text('🐰', style: TextStyle(fontSize: 33.28)),
-              ),
+              errorBuilder: (context, error, stackTrace) {
+                appLog('MyPage', '프로필 사진 로드 실패 url=$imageUrl error=$error');
+                return const Center(
+                  child: Text('🐰', style: TextStyle(fontSize: 33.28)),
+                );
+              },
             ),
     );
   }
@@ -487,6 +492,30 @@ class _MypageScreenState extends State<MypageScreen> {
     );
   }
 
+  /// 로그아웃은 저장된 토큰을 지우고 온보딩으로 돌아가므로, 실수로 눌렀을 때를
+  /// 대비해 한 번 확인을 받는다.
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('로그아웃'),
+        content: const Text('로그아웃하면 다시 카카오로 로그인해야 해요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('로그아웃'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) await signOutToOnboarding();
+  }
+
   // ─── 로그아웃 버튼 ────────────────────────────────────────────────────────
   Widget _buildLogoutButton() {
     return Container(
@@ -497,7 +526,7 @@ class _MypageScreenState extends State<MypageScreen> {
         border: Border.all(color: const Color(0xFFE2E9FF)),
       ),
       child: TextButton(
-        onPressed: () {},
+        onPressed: _confirmLogout,
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
