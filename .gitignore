@@ -46,3 +46,4 @@ app.*.map.json
 
 # API keys — do not commit
 .env
+.vercel
