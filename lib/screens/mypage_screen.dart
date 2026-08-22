@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'insurance_history_screen.dart';
 import '../core/app_log.dart';
+import '../core/services/current_place_service.dart';
 import '../core/services/token_storage.dart';
+import '../core/services/trip_service.dart';
+import '../widgets/trip_select_sheet.dart';
 import '../main.dart';
 
 class MypageScreen extends StatefulWidget {
@@ -12,12 +15,67 @@ class MypageScreen extends StatefulWidget {
 }
 
 class _MypageScreenState extends State<MypageScreen> {
+  static const String _logName = 'MyPage';
+
+  final TripService _tripService = TripService();
+
   UserProfile _profile = UserProfile.empty;
+
+  /// 통계 카드에 쓸 실제 값. null이면 아직 불러오는 중.
+  CurrentPlace? _place;
+  int? _tripCount;
+  int? _coverageCount;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadPlace();
+    _loadStats();
+  }
+
+  Future<void> _loadPlace() async {
+    final place = await CurrentPlaceService().fetch();
+    if (mounted) setState(() => _place = place);
+  }
+
+  /// '이용 보험'은 등록한 여행 수, '보장 항목'은 현재 여행의 담보 수로 센다.
+  Future<void> _loadStats() async {
+    try {
+      final sessions = await _tripService.listTrips();
+      if (!mounted) return;
+      setState(() => _tripCount = sessions.length);
+
+      final current = pickCurrentTrip(sessions);
+      if (current == null) {
+        setState(() => _coverageCount = 0);
+        return;
+      }
+
+      final documents = await _tripService.getDocuments(tripId: current.id);
+      if (documents.isEmpty) {
+        if (mounted) setState(() => _coverageCount = 0);
+        return;
+      }
+
+      final document = documents.firstWhere(
+        (d) => d.isCertificate,
+        orElse: () => documents.first,
+      );
+      final result = await _tripService.getCoverages(
+        tripId: current.id,
+        documentId: document.id,
+      );
+      if (!mounted) return;
+      setState(() => _coverageCount = result.coverages.length);
+    } catch (e) {
+      appLog(_logName, '통계 불러오기 실패: $e');
+      if (!mounted) return;
+      setState(() {
+        _tripCount ??= 0;
+        _coverageCount ??= 0;
+      });
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -77,11 +135,7 @@ class _MypageScreenState extends State<MypageScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           stops: [0.0, 0.55, 1.0],
-          colors: [
-            Color(0xFF003979),
-            Color(0xFF004D9D),
-            Color(0xFF0888F6),
-          ],
+          colors: [Color(0xFF003979), Color(0xFF004D9D), Color(0xFF0888F6)],
         ),
       ),
       padding: const EdgeInsets.fromLTRB(20, 56, 20, 28),
@@ -109,35 +163,24 @@ class _MypageScreenState extends State<MypageScreen> {
             children: [
               Expanded(
                 child: _buildStatCard(
-                  content: const Text('🇯🇵', style: TextStyle(fontSize: 20.8)),
-                  label: '일본 · D-7',
+                  content: Text(
+                    _place?.flag ?? '🌐',
+                    style: const TextStyle(fontSize: 20.8),
+                  ),
+                  label: _place?.countryLabel ?? '위치 확인 중',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  content: const Text(
-                    '10',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20.8,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  content: _buildStatNumber(_tripCount),
                   label: '이용 보험',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  content: const Text(
-                    '33',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20.8,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  content: _buildStatNumber(_coverageCount),
                   label: '보장 항목',
                 ),
               ),
@@ -160,9 +203,7 @@ class _MypageScreenState extends State<MypageScreen> {
       ),
       clipBehavior: Clip.antiAlias,
       child: imageUrl == null
-          ? const Center(
-              child: Text('🐰', style: TextStyle(fontSize: 33.28)),
-            )
+          ? const Center(child: Text('🐰', style: TextStyle(fontSize: 33.28)))
           : Image.network(
               imageUrl,
               width: 58,
@@ -175,6 +216,18 @@ class _MypageScreenState extends State<MypageScreen> {
                 );
               },
             ),
+    );
+  }
+
+  /// 아직 못 불러왔으면 '-'를 보여준다.
+  Widget _buildStatNumber(int? value) {
+    return Text(
+      value?.toString() ?? '-',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 20.8,
+        fontWeight: FontWeight.w700,
+      ),
     );
   }
 
@@ -221,7 +274,9 @@ class _MypageScreenState extends State<MypageScreen> {
               color: const Color(0xFFC0392B).withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Center(child: Text('📞', style: TextStyle(fontSize: 22.88))),
+            child: const Center(
+              child: Text('📞', style: TextStyle(fontSize: 22.88)),
+            ),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -244,7 +299,11 @@ class _MypageScreenState extends State<MypageScreen> {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFFC0392B), size: 22),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: Color(0xFFC0392B),
+            size: 22,
+          ),
         ],
       ),
     );
@@ -280,7 +339,9 @@ class _MypageScreenState extends State<MypageScreen> {
               color: const Color(0xFFEBF1FF),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Center(child: Text('✈️', style: TextStyle(fontSize: 20.8))),
+            child: const Center(
+              child: Text('✈️', style: TextStyle(fontSize: 20.8)),
+            ),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -298,7 +359,11 @@ class _MypageScreenState extends State<MypageScreen> {
                 SizedBox(height: 3),
                 Text(
                   '2025.04.08 – 04.18 · D-7',
-                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11.44, fontWeight: FontWeight.w400),
+                  style: TextStyle(
+                    color: Color(0xFF4A6080),
+                    fontSize: 11.44,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ],
             ),
@@ -332,7 +397,11 @@ class _MypageScreenState extends State<MypageScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF8BA3CC), size: 20),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: Color(0xFF8BA3CC),
+            size: 20,
+          ),
         ],
       ),
     );
@@ -363,7 +432,9 @@ class _MypageScreenState extends State<MypageScreen> {
                 color: const Color(0xFFF0F4FF),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Center(child: Text('📂', style: TextStyle(fontSize: 22.88))),
+              child: const Center(
+                child: Text('📂', style: TextStyle(fontSize: 22.88)),
+              ),
             ),
             const SizedBox(width: 14),
             const Expanded(
@@ -381,12 +452,20 @@ class _MypageScreenState extends State<MypageScreen> {
                   SizedBox(height: 3),
                   Text(
                     '만료된 보험 기록 전체 조회',
-                    style: TextStyle(color: Color(0xFF4A6080), fontSize: 11.44, fontWeight: FontWeight.w400,),
+                    style: TextStyle(
+                      color: Color(0xFF4A6080),
+                      fontSize: 11.44,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Color(0xFF8BA3CC), size: 20),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: Color(0xFF8BA3CC),
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -409,14 +488,24 @@ class _MypageScreenState extends State<MypageScreen> {
             subtitle: '이름, 연락처, 여권 정보',
             badge: null,
           ),
-          const Divider(height: 1, color: Color(0xFFF0F4FF), indent: 16, endIndent: 16),
+          const Divider(
+            height: 1,
+            color: Color(0xFFF0F4FF),
+            indent: 16,
+            endIndent: 16,
+          ),
           _buildAccountRow(
             emoji: '📄',
             title: '증권 관리',
             subtitle: 'PDF 업로드 & 보장 분석',
             badge: 'NEW',
           ),
-          const Divider(height: 1, color: Color(0xFFF0F4FF), indent: 16, endIndent: 16),
+          const Divider(
+            height: 1,
+            color: Color(0xFFF0F4FF),
+            indent: 16,
+            endIndent: 16,
+          ),
           _buildAccountRow(
             emoji: '🔔',
             title: '알림 설정',
@@ -445,7 +534,9 @@ class _MypageScreenState extends State<MypageScreen> {
               color: const Color(0xFFF0F4FF),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 20.8))),
+            child: Center(
+              child: Text(emoji, style: const TextStyle(fontSize: 20.8)),
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -463,7 +554,11 @@ class _MypageScreenState extends State<MypageScreen> {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: TextStyle(color: Color(0xFF4A6080), fontSize: 11.44, fontWeight: FontWeight.w400,),
+                  style: TextStyle(
+                    color: Color(0xFF4A6080),
+                    fontSize: 11.44,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ],
             ),
@@ -486,7 +581,11 @@ class _MypageScreenState extends State<MypageScreen> {
             ),
             const SizedBox(width: 8),
           ],
-          const Icon(Icons.chevron_right_rounded, color: Color(0xFF8BA3CC), size: 20),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: Color(0xFF8BA3CC),
+            size: 20,
+          ),
         ],
       ),
     );
@@ -529,7 +628,9 @@ class _MypageScreenState extends State<MypageScreen> {
         onPressed: _confirmLogout,
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
         child: const Text(
           '로그아웃',

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
 import '../core/app_log.dart';
+import '../core/services/current_place_service.dart';
 import '../core/coverage_display.dart';
 import '../core/models/coverage_result.dart';
 import '../core/services/token_storage.dart';
@@ -110,63 +109,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchLocation() async {
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _setLocation('위치 서비스가 꺼져 있어요');
-        return;
-      }
-
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        _setLocation('위치 권한이 없어요');
-        return;
-      }
-
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.low,
-        ),
-      );
-
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        final country = place.country ?? '';
-        final city = place.locality?.isNotEmpty == true
-            ? place.locality!
-            : (place.administrativeArea ?? '');
-        final flag = _codeToFlag(place.isoCountryCode ?? '');
-        _setLocation('$flag $country · $city');
-      } else {
-        _setLocation('위치를 불러올 수 없어요');
-      }
-    } catch (_) {
-      _setLocation('위치를 불러올 수 없어요');
-    }
-  }
-
-  void _setLocation(String text) {
+    final place = await CurrentPlaceService().fetch();
     if (!mounted) return;
     setState(() {
-      _locationText = text;
+      _locationText = place.label;
       _isLoadingLocation = false;
     });
-  }
-
-  String _codeToFlag(String code) {
-    if (code.length != 2) return '🌐';
-    return code.toUpperCase().runes
-        .map((r) => String.fromCharCode(r + 0x1F1A5))
-        .join();
   }
 
   String _getGreeting() {
@@ -215,10 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text(
               _getGreeting(),
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 14.56,
-              ),
+              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14.56),
             ),
             const SizedBox(height: 4),
             const Text(
@@ -290,9 +235,10 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 _tripStatusText(),
                 style: const TextStyle(
-                    color: Color(0xFF9EBEFE),
-                    fontSize: 12.48,
-                    fontWeight: FontWeight.w400),
+                  color: Color(0xFF9EBEFE),
+                  fontSize: 12.48,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
             ],
           ),
@@ -313,7 +259,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       SizedBox(width: 8),
                       Text(
                         '위치 불러오는 중...',
-                        style: TextStyle(color: Colors.white54, fontSize: 16.64),
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 16.64,
+                        ),
                       ),
                     ],
                   ),
@@ -341,7 +290,10 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -393,27 +345,30 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 9),
         Row(
           children: [
-
-            Expanded(child: _buildQuickMenuCard(
-              emoji: '📞',
-              iconBgColor: const Color(0xFFF9DEDC),
-              title: '긴급 전화',
-              subtitle: '바로가기',
-              subtitleColor: const Color(0xFFC0392B),
-              borderColor: const Color(0xFFFFCCCC),
-            )),
-            const SizedBox(width: 6),
-            Expanded(child: _buildQuickMenuCard(
-              emoji: '📄',
-              iconBgColor: const Color(0xFFEBF1FF),
-              title: '새 보험 업로드',
-              subtitle: '바로가기',
-              subtitleColor: const Color(0xFF0888F6),
-              borderColor: const Color(0xFFE2E9FF),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const UploadScreen()),
+            Expanded(
+              child: _buildQuickMenuCard(
+                emoji: '📞',
+                iconBgColor: const Color(0xFFF9DEDC),
+                title: '긴급 전화',
+                subtitle: '바로가기',
+                subtitleColor: const Color(0xFFC0392B),
+                borderColor: const Color(0xFFFFCCCC),
               ),
-            )),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: _buildQuickMenuCard(
+                emoji: '📄',
+                iconBgColor: const Color(0xFFEBF1FF),
+                title: '새 보험 업로드',
+                subtitle: '바로가기',
+                subtitleColor: const Color(0xFF0888F6),
+                borderColor: const Color(0xFFE2E9FF),
+                onTap: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const UploadScreen())),
+              ),
+            ),
           ],
         ),
       ],
@@ -432,45 +387,47 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: iconBgColor,
-              borderRadius: BorderRadius.circular(12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Text(emoji, style: const TextStyle(fontSize: 22.88)),
+              ),
             ),
-            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22.88))),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Color(0xFF111827),
-                  fontSize: 14.56,
-                  fontWeight: FontWeight.w600,
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF111827),
+                    fontSize: 14.56,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: TextStyle(color: subtitleColor, fontSize: 12.48),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: subtitleColor, fontSize: 12.48),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -570,7 +527,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(width: 4),
                     Text(
                       'AI 어시스턴트',
-                      style: TextStyle(color: Color(0xFFCEDDFE), fontSize: 12.48),
+                      style: TextStyle(
+                        color: Color(0xFFCEDDFE),
+                        fontSize: 12.48,
+                      ),
                     ),
                   ],
                 ),
