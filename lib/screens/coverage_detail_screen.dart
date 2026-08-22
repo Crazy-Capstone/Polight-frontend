@@ -58,7 +58,11 @@ class CoverageDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _SummarySection(items: summaryItems),
-                    const Divider(height: 1, thickness: 1, color: Color(0xFFE2E9FF)),
+                    const Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Color(0xFFE2E9FF),
+                    ),
                     _DetailSection(items: detailItems),
                     const SizedBox(height: 32),
                   ],
@@ -95,11 +99,7 @@ class _BlueHeader extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           stops: [0.0, 0.563, 0.9383],
-          colors: [
-            Color(0xFF004D9D),
-            Color(0xFF0066C3),
-            Color(0xFF0888F6),
-          ],
+          colors: [Color(0xFF004D9D), Color(0xFF0066C3), Color(0xFF0888F6)],
         ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(0),
@@ -261,59 +261,72 @@ class _SummarySection extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-      child: Row(
-        children: List.generate(items.length * 2 - 1, (i) {
-          if (i.isOdd) return const SizedBox(width: 8);
-          final item = items[i ~/ 2];
-          return Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE2E9FF), width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2563EB).withValues(alpha: 0.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+      // 한 카드의 값이 두 줄이 되어도 세 카드의 높이가 어긋나지 않게 맞춘다
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: List.generate(items.length * 2 - 1, (i) {
+            if (i.isOdd) return const SizedBox(width: 8);
+            final item = items[i ~/ 2];
+            return Expanded(
+              child: Container(
+                // 가로 padding이 없으면 글씨가 카드 테두리에 붙는다
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E9FF), width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.06),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      item.label,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 10.4,
+                        color: Color(0xFF4A6080),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      // "1억 5000만원"처럼 길어지면 두 줄로 감싼다
+                      item.value,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.48,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF001635),
+                      ),
+                    ),
+                    const SizedBox(height: 13),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF69A3FD),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    item.label,
-                    style: const TextStyle(
-                      fontSize: 10.4,
-                      color: Color(0xFF4A6080),
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.value,
-                    style: const TextStyle(
-                      fontSize: 12.48,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF001635),
-                    ),
-                  ),
-                  const SizedBox(height: 13),
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF69A3FD),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -357,9 +370,7 @@ class _DetailItemRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.fromLTRB(14, 7, 14, 10),
       decoration: BoxDecoration(
-        color: item.isCovered
-            ? Colors.white
-            : const Color(0xFFFFF5F5),
+        color: item.isCovered ? Colors.white : const Color(0xFFFFF5F5),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: item.isCovered

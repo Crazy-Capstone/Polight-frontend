@@ -627,13 +627,9 @@ class _QuickReplyBar extends StatelessWidget {
   const _QuickReplyBar({required this.onChipTap});
 
   static const _chips = [
-    '🏥 주변 병원을 보여줘',
-    '🚓 주변 경찰서를 보여줘',
-    '🏛 주변 대사관을 보여줘',
-    '📄 증권 확인',
-    '💰 보장 한도',
-    '🗣 통역 지원',
-    '🚑 긴급 연락',
+    '🏥 주변 병원',
+    '🚓 주변 경찰서',
+    '🏛 주변 대사관',
   ];
 
   @override
@@ -702,6 +698,8 @@ class _InputBar extends StatelessWidget {
         border: Border(top: BorderSide(color: Color(0xFFEEF2FF), width: 1)),
       ),
       child: Row(
+        // 입력창이 여러 줄로 늘어나도 전송 버튼은 아래에 붙어 있게 한다
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: Container(
@@ -713,6 +711,10 @@ class _InputBar extends StatelessWidget {
               ),
               child: TextField(
                 controller: controller,
+                // 글이 길어지면 줄바꿈되며 최대 5줄까지 위아래로 늘어나고,
+                // 그 이상은 입력창 안에서 스크롤된다.
+                minLines: 1,
+                maxLines: 5,
                 style:
                     const TextStyle(fontSize: 14.56, color: Color(0xFF1A2B4A)),
                 decoration: const InputDecoration(

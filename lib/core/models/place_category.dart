@@ -11,7 +11,7 @@ enum PlaceCategory {
     badge: '제휴',
     radiusMeters: 3000,
     keywords: [
-      '병원', '응급실', '의원', '클리닉',
+      '병원 어디에 있어?',
     ],
   ),
   police(
@@ -22,7 +22,7 @@ enum PlaceCategory {
     badge: null,
     radiusMeters: 5000,
     keywords: [
-      '경찰서', '경찰', '파출소', '지구대', '112', '도난', '소매치기',
+      '경찰서 어디에 있어?'
     ],
   ),
   embassy(
@@ -37,7 +37,7 @@ enum PlaceCategory {
     // 재외공관은 도시마다 한두 곳뿐이라 반경을 크게 잡는다.
     radiusMeters: 50000,
     keywords: [
-      '대사관', '영사관', '영사', '여권',
+      '대사관 어디에 있어?',
     ],
   );
 

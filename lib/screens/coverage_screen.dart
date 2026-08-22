@@ -51,6 +51,10 @@ class CoverageItem {
     this.summaryItems = const [],
     this.detailItems = const [],
   });
+
+  /// 상세 화면에 보여줄 내용이 있는지. 둘 다 비면 상세 화면이 사실상 빈 화면이라
+  /// 목록에서 아래로 내리고 '상세보기'도 감춘다.
+  bool get hasDetails => detailItems.isNotEmpty || summaryItems.isNotEmpty;
 }
 
 // ── 화면 ─────────────────────────────────────────────────────
@@ -305,10 +309,19 @@ class _CoverageScreenState extends State<CoverageScreen> {
     }
 
     final items = result.coverages.map(_coverageItemFrom).toList();
+
+    // 상세 내용이 비어 있는 담보는 목록 아래로 내린다.
+    // 백엔드가 '걱정되는 상황'에 해당하는 담보를 위로 올려서 주므로,
+    // 각 그룹 안에서는 받은 순서를 그대로 유지한다.
+    final ordered = [
+      ...items.where((i) => i.hasDetails),
+      ...items.where((i) => !i.hasDetails),
+    ];
+
     final leftColumn = <CoverageItem>[];
     final rightColumn = <CoverageItem>[];
-    for (var i = 0; i < items.length; i++) {
-      (i.isEven ? leftColumn : rightColumn).add(items[i]);
+    for (var i = 0; i < ordered.length; i++) {
+      (i.isEven ? leftColumn : rightColumn).add(ordered[i]);
     }
 
     // 카드 높이를 고정하지 않고 내용에 맞춰 늘어나도록, 2개의 열로 나눠 쌓는다.
@@ -692,31 +705,33 @@ class _CoverageCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => CoverageDetailScreen(
-                                emoji: item.emoji,
-                                coverageTitle: item.title,
-                                insurer: item.insurer,
-                                maxLimit: item.limitLabel,
-                                summaryItems: item.summaryItems,
-                                detailItems: item.detailItems,
+                      // 보여줄 상세 내용이 없으면 빈 화면으로 들어가게 되므로 숨긴다
+                      if (item.hasDetails)
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CoverageDetailScreen(
+                                  emoji: item.emoji,
+                                  coverageTitle: item.title,
+                                  insurer: item.insurer,
+                                  maxLimit: item.limitLabel,
+                                  summaryItems: item.summaryItems,
+                                  detailItems: item.detailItems,
+                                ),
                               ),
+                            );
+                          },
+                          child: const Text(
+                            '상세보기 ›',
+                            style: TextStyle(
+                              fontSize: 10.4,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF0888F6),
                             ),
-                          );
-                        },
-                        child: const Text(
-                          '상세보기 ›',
-                          style: TextStyle(
-                            fontSize: 10.4,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF0888F6),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ],
