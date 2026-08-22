@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../core/app_log.dart';
+import '../core/inline_markdown.dart';
 import '../core/models/chat_answer.dart';
 import '../core/models/chat_message.dart';
 import '../core/models/place_category.dart';
@@ -410,8 +411,9 @@ class _BotMessage extends StatelessWidget {
               ),
               border: Border.all(color: const Color(0xFFE8EDFF), width: 1),
             ),
-            child: Text(
-              text,
+            // 챗봇 답변은 **강조** 같은 마크다운이 섞여 오므로 굵게 반영해서 그린다
+            child: InlineMarkdownText(
+              text: text,
               style: const TextStyle(
                 fontSize: 14.56,
                 color: Color(0xFF1A2B4A),
@@ -596,8 +598,8 @@ class _BotMessageWithCards extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      text,
+                    InlineMarkdownText(
+                      text: text,
                       style: const TextStyle(
                         fontSize: 12.48,
                         color: Color(0xFF001635),
